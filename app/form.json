@@ -1,0 +1,17 @@
+[
+  { "label": "Candidate Name", "field": "full_name", "type": "string", "length": 50 },
+  { "label": "National ID", "field": "national_id", "type": "string", "length": 50 },
+  { "label": "Ward / Village Tract Name", "field": "ward_village", "type": "string", "length": 50 },
+  { "label": "Date of Birth", "field": "dob", "type": "string", "length": 50 },
+  { "label": "Nationality / Religion", "field": "nationality", "type": "string", "length": 50 },
+  { "label": "Education", "field": "education", "type": "string", "length": 50 },
+  { "label": "Occupation", "field": "occupation", "type": "string", "length": 50 },
+  { "label": "Permanent Address", "field": "address_perm", "type": "string", "length": 150 },
+  { "label": "Current Address", "field": "address_mail", "type": "string", "length": 150 },
+  { "label": "Constituency Name", "field": "constituency", "type": "string", "length": 50 },
+  { "label": "Party Name", "field": "party", "type": "string", "length": 50 },
+  { "label": "Father Name", "field": "father", "type": "string", "length": 50 },
+  { "label": "Father Nationality / Religion", "field": "father_origin", "type": "string", "length": 50 },
+  { "label": "Mother Name", "field": "mother", "type": "string", "length": 50 },
+  { "label": "Mother Nationality / Religion", "field": "mother_origin", "type": "string", "length": 50 }
+]
