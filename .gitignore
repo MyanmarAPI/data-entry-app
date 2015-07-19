@@ -5,3 +5,5 @@ bower_components
 test/bower_components/
 *.log
 *.sqlite3
+.DS_Store
+app/form_images/*.png

@@ -1,9 +1,19 @@
 var crypto = require("crypto");
 var LocalStrategy = require('passport-local').Strategy;
 
+var hashPassword = function(password, salt) {
+  var hash = crypto.createHash('sha256');
+  hash.update(password);
+  hash.update(salt);
+  return hash.digest('hex');
+};
+
 module.exports = {
   createUser: function(req, db, callback) {
-    db.get("INSERT INTO users (username, password, salt) VALUES ('" + [req.body.username, req.body.password, process.env.SALT || 'ekcweio92dmqbd'].join("','") + "')", function(err) {
+    var salt = process.env.SALT || 'ekcweio92dmqbd';
+    var salted_password = hashPassword(req.body.password, salt);
+
+    db.get("INSERT INTO users (username, password, salt) VALUES ('" + [req.body.username, salted_password, salt].join("','") + "')", function(err) {
       if (err) {
         throw err;
       }
@@ -12,28 +22,27 @@ module.exports = {
   },
 
   setupAuth: function(passport, db) {
-    var hashPassword = function(password, salt) {
-      var hash = crypto.createHash('sha256');
-      hash.update(password);
-      hash.update(salt);
-      return hash.digest('hex');
-    }
-
-    passport.use(new LocalStrategy(function(username, password, done) {
-      console.log('passport using');
-      db.get('SELECT salt FROM users WHERE username = ?', username, function(err, row) {
-        if (!row) {
-          console.log('no row fail');
-          return done(null, false);
+    console.log('using');
+    passport.use('local-login', new LocalStrategy({
+      usernameField: 'email',
+      passwordField: 'password',
+      passReqToCallback: true
+    },
+    function(req, email, password, done){
+      db.get('SELECT * FROM users WHERE username = ?', req.body.email, function(err, user) {
+        if(err){
+          console.log('error');
+          return done(err);
         }
-        var hash = hashPassword(password, row.salt);
-        db.get('SELECT username, id FROM users WHERE username = ? AND password = ?', username, hash, function(err, row) {
-          if (!row) {
-            console.log('no password fail');
-            return done(null, false);
-          }
-          return done(null, row);
-        });
+        if(!user){
+          console.log('no user');
+          return done(null, false, req.flash('loginMessage', 'No user found.'));
+        }
+        if (hashPassword(req.body.password, user.salt) != user.password) {
+          console.log('bad password');
+          return done(null, false, req.flash('loginMessage', 'Bad password.'));
+        }
+        return done(null, user);
       });
     }));
 
