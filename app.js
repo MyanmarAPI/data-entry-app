@@ -77,7 +77,7 @@ app.get('/type-form', isLoggedIn, function(req, res) {
           throw err;
         }
         if (!row) {
-          res.send('No forms to digitize!');
+          res.send('No forms for you to digitize! (some may need a second validator)');
         } else {
           renderForm(res, row, 1);
         }
