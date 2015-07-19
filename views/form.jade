@@ -7,4 +7,5 @@ html
     form(action="/type-form", method="post")
       input(type="hidden", name="entry_id", value="")
       input(type="hidden", name="form_id", value=form.id)
+      input(type="hidden", name="order", value=form.order)
       input(type="submit", value="Yay!")

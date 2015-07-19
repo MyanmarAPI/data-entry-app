@@ -24,7 +24,7 @@ var isLoggedIn = function(req, res, next) {
 };
 
 // Zawgyi converter
-var knayi = require("knayi-myscript");
+// var knayi = require("knayi-myscript");
 
 // set up server
 var app = express();
@@ -41,16 +41,82 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // server status
-app.get('/status', function(req, res) {
-  if (req.isAuthenticated()) {
-    res.json({ status: { server: "ok", user: "ok" } });
-  } else {
-    res.json({ status: { server: "ok", user: "loggedout" } });
+var serverStatus = require('./server-status');
+app.get('/status', serverStatus.status);
+
+// type form sections
+var renderForm = function(res, row, order) {
+  // display form to user
+  res.render('form', {
+    form: {
+      id: row.id,
+      order: order,
+      scan_file: '/form_images/' + row.scan_file
+    }
+  });
+
+  // mark form as actively worked-on
+  if (order === 1) {
+    db.get("UPDATE forms SET first_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
+  } else if (order === 2) {
+    db.get("UPDATE forms SET second_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
+  } else if (order === 3) {
+    db.get("UPDATE forms SET third_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
   }
+};
+
+app.get('/type-form', isLoggedIn, function(req, res) {
+  db.get('SELECT forms.id, scan_file FROM forms INNER JOIN users ON first_entry_id WHERE second_entry_id IS NULL AND users.id != ' + req.user.id, function(err, row) {
+    if (err) {
+      throw err;
+    }
+    if (!row) {
+      // no forms waiting for second validator
+      db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
+        if (err) {
+          throw err;
+        }
+        if (!row) {
+          res.send('No forms to digitize!');
+        } else {
+          renderForm(res, row, 1);
+        }
+      });
+    } else {
+      renderForm(res, row, 2);
+    }
+  });
 });
 
-// data update and export
+app.post('/type-form', isLoggedIn, function(req, res) {
+  var form_values = [];
+  form_values.push(req.user.id);
+  var form_keys = ['full_name', 'national_id', 'ward_village', 'dob', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency', 'party', 'father', 'father_origin', 'mother', 'mother_origin'];
+  for (var k in form_keys) {
+    form_values.push(req.body[form_keys[k]]);
+  }
+  form_values = "'" + form_values.join("','") + "'";
+  db.run('INSERT INTO entries (user_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
+    if (err) {
+      throw err;
+    }
+    // record the entry
+    var order = req.body.order * 1;
+    var entry_column = "first_entry_id";
+    if (order === 2) {
+      entry_column = "second_entry_id";
+    } else if (order === 3) {
+      entry_column = "third_entry_id";
+    }
+    db.get('UPDATE forms SET ' + entry_column + ' = ' + this.lastID + ' WHERE id = ' + req.body.form_id, function(err, row) {
+      res.redirect('/type-form');
+    });
+  });
+});
+
+// data maintenance
 app.get('/data-update', function(req, res) {
+  // find any new scan images and include them in the forms table
   var files = fs.readdir(__dirname + "/app/form_images", function(err, files) {
     if (err) {
       throw err;
@@ -71,47 +137,8 @@ app.get('/data-update', function(req, res) {
   });
 });
 
-// type form sections
-app.get('/type-form', isLoggedIn, function(req, res) {
-  db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
-    if (err) {
-      throw err;
-    }
-    if (!row) {
-      res.send('No more forms!');
-    } else {
-      res.render('form', {
-        form: {
-          id: row.id,
-          scan_file: '/form_images/' + row.scan_file
-        }
-      });
-      // mark form as actively worked-on
-      db.get('UPDATE forms SET first_entry_id = -1 WHERE id = ' + row.id, function(err, row) {
-      });
-    }
-  });
-});
-
-app.post('/type-form', isLoggedIn, function(req, res) {
-  var form_values = [];
-  form_values.push(req.user.id);
-  var form_keys = ['full_name', 'national_id', 'ward_village', 'dob', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency', 'party', 'father', 'father_origin', 'mother', 'mother_origin'];
-  for (var k in form_keys) {
-    form_values.push(req.body[form_keys[k]]);
-  }
-  form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
-    if (err) {
-      throw err;
-    }
-    db.get('UPDATE forms SET first_entry_id = ' + this.lastID + ' WHERE id = ' + req.body.form_id, function(err, row) {
-      res.redirect('/type-form');
-    });
-  });
-});
-
 app.get('/activate-form', function(req, res) {
+  // find any open forms and allow new editors to edit them
   db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1; UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1; UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function(err, row) {
     if (err) {
       throw err;
