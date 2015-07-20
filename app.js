@@ -49,14 +49,19 @@ var serverStatus = require('./server-status');
 app.get('/status', serverStatus.status);
 
 // type form sections
-var renderForm = function(res, row, order) {
+var renderForm = function(res, row, order, matching) {
+  if ((typeof matching == 'undefined') || !matching) {
+    matching = [];
+  }
+
   // display form to user
   res.render('form', {
     form: {
       id: row.id,
       order: order,
       scan_file: '/form_images/' + row.scan_file
-    }
+    },
+    matching: matching
   });
 
   // mark form as actively worked-on
@@ -69,26 +74,73 @@ var renderForm = function(res, row, order) {
   }
 };
 
+var entries_match = function(entry1, entry2) {
+  var fields = ["full_name", "norm_national_id", "ward_village", "dob", "education", "occupation", "address_perm", "address_mail", "constituency", "party", "father", "father_origin", "mother", "mother_origin"];
+  var matching = [];
+  for (var i = 0; i < fields.length; i++) {
+    if (entry1[fields[i]].replace(/\s/g, '') === entry2[fields[i]].replace(/\s/g, '')) {
+      matching.push(fields[i]);
+    } else {
+      console.log( fields[i] + ": " + entry1[fields[i]] + " did not match " + entry2[fields[i]]);
+    }
+  }
+  if (fields.length === matching.length) {
+    return true;
+  } else {
+    return matching;
+  }
+};
+
 app.get('/type-form', isLoggedIn, function(req, res) {
-  db.get('SELECT forms.id, scan_file FROM forms INNER JOIN users ON first_entry_id WHERE second_entry_id IS NULL AND users.id != ' + req.user.id, function(err, row) {
+  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_match AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
       throw err;
     }
-    if (!row) {
-      // no forms waiting for second validator
-      db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
+    if (form_seeking_match && !req.query.third) {
+      db.get('SELECT * FROM entries WHERE id = ' + form_seeking_match.second_entry_id, function(err, second_entry) {
         if (err) {
           throw err;
         }
-        if (!row) {
-          res.send('No forms for you to digitize! (some may need a second validator)');
-        } else {
-          renderForm(res, row, 1);
+        var matching = entries_match(form_seeking_match, second_entry);
+        if (matching === true) {
+          // past entries match - update DB
+          console.log('all matched');
+          db.run('UPDATE forms SET entries_match = 1 WHERE id = ' + second_entry.form_id);
+          db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
+          return res.redirect('/type-form?third=true');
         }
+        if (second_entry.user_id === req.user.id * 1) {
+          // current user already reviewed this form
+          console.log('user cannot review');
+          return res.redirect('/type-form?third=true');
+        }
+        second_entry.scan_file = form_seeking_match.scan_file;
+        second_entry.id = second_entry.form_id;
+        renderForm(res, second_entry, 3, matching);
       });
-    } else {
-      renderForm(res, row, 2);
+      return;
     }
+
+    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND entries.user_id != ' + req.user.id, function(err, row) {
+      if (err) {
+        throw err;
+      }
+      if (!row) {
+        // no forms waiting for second validator
+        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
+          if (err) {
+            throw err;
+          }
+          if (!row) {
+            res.send('No forms for you to digitize! (some may need a second validator)');
+          } else {
+            renderForm(res, row, 1);
+          }
+        });
+      } else {
+        renderForm(res, row, 2);
+      }
+    });
   });
 });
 
