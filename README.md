@@ -29,6 +29,12 @@ sqlite3 database.sqlite3
 (enter code from setup.sql)
 ```
 
+## Myanmar text
+
+Assumes Unicode input. Includes converters for Zawgyi input and Myanmar numerals.
+
+To set the default font to Google Noto Myanmar on a page, include the /styles/myanmar.css stylesheet.
+
 ## URLs
 
 / = static page /app/index.html

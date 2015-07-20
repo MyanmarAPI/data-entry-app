@@ -2,12 +2,15 @@ doctype html
 html
   head
     meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
     img(src=form.scan_file)
     form(action="/type-form", method="post")
       input(type="hidden", name="entry_id", value="")
       input(type="hidden", name="form_id", value=form.id)
       input(type="hidden", name="order", value=form.order)
+      strong ကိုယ်စားလှယ်လောင်း၏အမည်
       input(type="text", name="full_name", value="Test")
+      strong မှတ်ပုံတင်အမှတ်
       input(type="text", name="national_id", value="၂၀၁၀")
       input(type="submit", value="Send")

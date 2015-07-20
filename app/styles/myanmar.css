@@ -1,0 +1,14 @@
+@font-face {
+  font-family: 'Noto Sans Myanmar';
+  src: url(/NotoSansMyanmar/NotoSansMyanmar-Regular.ttf);
+}
+
+@font-face {
+  font-family: 'Noto Sans Myanmar';
+  src: url(/NotoSansMyanmar/NotoSansMyanmar-Bold.ttf);
+  font-weight: bold;
+}
+
+html, body, span, strong {
+  font-family: 'Noto Sans Myanmar', sans-serif;
+}
