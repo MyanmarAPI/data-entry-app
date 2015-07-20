@@ -91,6 +91,11 @@ var entries_match = function(entry1, entry2) {
   }
 };
 
+var finishForm = function(thirdEntry) {
+  // mark non-consensus data
+  db.run('UPDATE forms SET entries_match = 1 WHERE form_id = ' + thirdEntry.form_id);
+};
+
 app.get('/type-form', isLoggedIn, function(req, res) {
   db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_match AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
@@ -165,6 +170,7 @@ app.post('/type-form', isLoggedIn, function(req, res) {
       entry_column = "second_entry_id";
     } else if (order === 3) {
       entry_column = "third_entry_id";
+      finishForm(req.body);
     }
     db.get('UPDATE forms SET ' + entry_column + ' = ' + this.lastID + ' WHERE id = ' + req.body.form_id, function(err, row) {
       res.redirect('/type-form');
@@ -173,6 +179,17 @@ app.post('/type-form', isLoggedIn, function(req, res) {
 });
 
 // review entries
+app.get("/admin", function(req, res) {
+  db.get("SELECT COUNT(*) AS total FROM forms", function(err, r1) {
+    db.get("SELECT COUNT(*) AS finished FROM forms WHERE entries_match", function(err, r2) {
+      res.render('admin', {
+        total: r1.total,
+        finished: r2.finished
+      });
+    });
+  });
+});
+
 var fixDates = function(rows) {
   for (var i = 0; i < rows.length; i++) {
     rows[i].saved = timeago(new Date(rows[i].saved + " UTC"));

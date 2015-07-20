@@ -1,0 +1,24 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    h3 Links
+    ul
+      li
+        a(href="/data-update") /data-update - new forms
+      li
+        a(href="/activate-form") /activate-form - reset unfinished entries
+      li
+        a(href="/register") /register - new users
+      li
+        a(href="/entries") /entries - newly completed entries
+      li
+        a(href="/entries/nick") /entries/nick - new entries from 'nick'
+
+    h3 Stats
+    strong finished forms:&nbsp;
+    span= finished
+    span &nbsp;/&nbsp;
+    span= total
