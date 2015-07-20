@@ -22,7 +22,8 @@ CREATE TABLE "entries" (
     "father" TEXT,
     "father_origin" TEXT,
     "mother" TEXT,
-    "mother_origin" TEXT
+    "mother_origin" TEXT,
+    "saved" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "forms" (

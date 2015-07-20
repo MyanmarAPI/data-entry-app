@@ -29,6 +29,32 @@ sqlite3 database.sqlite3
 (enter code from setup.sql)
 ```
 
+## URLs
+
+/ = static page /app/index.html
+
+/form.json = static data /app/form.json about form fields
+
+/status = JSON endpoint for server and user status
+
+/register = create user: post to /register
+
+/login = login user: post to /login
+
+/login?state=newuser = just came from /register
+
+/login?state=failed = just failed username / password combo
+
+/data-update = ensure a form row exists for each image in the /app/form_images directory
+
+/activate-form = any unfinished form entries are reopened for new users
+
+/type-form = page to render form, requires login: post to /type-form
+
+/entries = index of recent entries
+
+/entries/:username = list of recent entries by a user
+
 ## License
 
 Open source under the BSD license

@@ -1,0 +1,10 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+  body
+    - scan_image = "/form_images/" + entry.scan_file
+    img(src=scan_image)
+    .form
+      h4 Full Name
+      input(type="text", name="full_name", value=entry.full_name)

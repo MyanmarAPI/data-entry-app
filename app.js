@@ -91,12 +91,13 @@ app.get('/type-form', isLoggedIn, function(req, res) {
 app.post('/type-form', isLoggedIn, function(req, res) {
   var form_values = [];
   form_values.push(req.user.id);
+  form_values.push(req.body.form_id * 1);
   var form_keys = ['full_name', 'national_id', 'ward_village', 'dob', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency', 'party', 'father', 'father_origin', 'mother', 'mother_origin'];
   for (var k in form_keys) {
     form_values.push(req.body[form_keys[k]]);
   }
   form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
+  db.run('INSERT INTO entries (user_id, form_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
     if (err) {
       throw err;
     }
@@ -110,6 +111,42 @@ app.post('/type-form', isLoggedIn, function(req, res) {
     }
     db.get('UPDATE forms SET ' + entry_column + ' = ' + this.lastID + ' WHERE id = ' + req.body.form_id, function(err, row) {
       res.redirect('/type-form');
+    });
+  });
+});
+
+// review entries
+app.get('/entries', function(req, res) {
+  db.all('SELECT id, full_name, saved FROM entries ORDER BY saved DESC LIMIT 20', function(err, rows) {
+    if (err) {
+      throw err;
+    }
+    res.render('entries', {
+      entries: rows
+    });
+  });
+});
+
+app.get('/entries/:username', function(req, res) {
+  db.get('SELECT * FROM users WHERE username = ?', req.params.username, function(err, user) {
+    db.all('SELECT id, full_name, saved FROM entries WHERE user_id = ' + user.id + ' ORDER BY saved DESC LIMIT 20', function(err, rows) {
+      if (err) {
+        throw err;
+      }
+      res.render('entries', {
+        entries: rows
+      });
+    });
+  });
+});
+
+app.get('/entry/:id', function(req, res) {
+  db.get('SELECT * FROM entries INNER JOIN forms ON form_id WHERE entries.id = ' + req.params.id, function(err, row) {
+    if (err) {
+      throw err;
+    }
+    res.render('entry', {
+      entry: row
     });
   });
 });
