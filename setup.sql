@@ -11,6 +11,7 @@ CREATE TABLE "entries" (
     "user_id" INTEGER,
     "full_name" TEXT,
     "national_id" TEXT,
+    "norm_national_id" TEXT,
     "ward_village" TEXT,
     "dob" TEXT,
     "education" TEXT,
@@ -28,7 +29,7 @@ CREATE TABLE "entries" (
 
 CREATE TABLE "forms" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "national_id" TEXT,
+    "consensus_id" TEXT,
     "approved" BOOLEAN,
     "scan_file" TEXT,
     "color_scan" BOOLEAN,

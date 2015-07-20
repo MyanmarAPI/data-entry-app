@@ -11,6 +11,7 @@ var compression = require("compression");
 var fs = require("fs");
 var sqlite3 = require("sqlite3");
 var db = new sqlite3.Database('./database.sqlite3');
+var timeago = require("timeago");
 
 // authentication
 var passport = require("passport");
@@ -25,6 +26,9 @@ var isLoggedIn = function(req, res, next) {
 
 // Zawgyi converter
 // var knayi = require("knayi-myscript");
+
+// numeric converter
+var myanmarNumbers = require("myanmar-numbers").myanmarNumbers;
 
 // set up server
 var app = express();
@@ -92,12 +96,13 @@ app.post('/type-form', isLoggedIn, function(req, res) {
   var form_values = [];
   form_values.push(req.user.id);
   form_values.push(req.body.form_id * 1);
+  form_values.push(myanmarNumbers(req.body.national_id));
   var form_keys = ['full_name', 'national_id', 'ward_village', 'dob', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency', 'party', 'father', 'father_origin', 'mother', 'mother_origin'];
   for (var k in form_keys) {
     form_values.push(req.body[form_keys[k]]);
   }
   form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, form_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
+  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
     if (err) {
       throw err;
     }
@@ -116,11 +121,32 @@ app.post('/type-form', isLoggedIn, function(req, res) {
 });
 
 // review entries
+var fixDates = function(rows) {
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].saved = timeago(new Date(rows[i].saved + " UTC"));
+  }
+  return rows;
+};
+
+app.get('/candidate/:national_id', function(req, res) {
+  var norm_number = myanmarNumbers(req.params.national_id);
+  db.all("SELECT id, full_name, saved FROM entries WHERE norm_national_id = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+    if (err) {
+      throw err;
+    }
+    rows = fixDates(rows);
+    res.render('entries', {
+      entries: rows
+    });
+  });
+});
+
 app.get('/entries', function(req, res) {
   db.all('SELECT id, full_name, saved FROM entries ORDER BY saved DESC LIMIT 20', function(err, rows) {
     if (err) {
       throw err;
     }
+    rows = fixDates(rows);
     res.render('entries', {
       entries: rows
     });
@@ -133,6 +159,7 @@ app.get('/entries/:username', function(req, res) {
       if (err) {
         throw err;
       }
+      rows = fixDates(rows);
       res.render('entries', {
         entries: rows
       });

@@ -55,6 +55,8 @@ sqlite3 database.sqlite3
 
 /entries/:username = list of recent entries by a user
 
+/candidate/:national_id = list of entries for a national id - can be Myanmar or Latin numerals
+
 ## License
 
 Open source under the BSD license

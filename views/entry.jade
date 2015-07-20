@@ -7,4 +7,9 @@ html
     img(src=scan_image)
     .form
       h4 Full Name
-      input(type="text", name="full_name", value=entry.full_name)
+      span= entry.full_name
+      h4 National ID
+      span= entry.national_id
+      span &nbsp;(
+      span= entry.norm_national_id
+      span )
