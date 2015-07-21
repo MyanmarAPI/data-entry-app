@@ -3,7 +3,7 @@
   { "label": "Serial Number", "field": "serial", "type": "string", "length": 10 },
   { "label": "ကိုယ်စားလှယ်လောင်း၏အမည်", "field": "full_name", "type": "string", "length": 50 },
   { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "string", "length": 50 },
-  { "label": "ရပ်ကွက်/ကျေးရွာအုပ်စု အမည်" "ward_village", "type": "autocomplete", "length": 50 },
+  { "label": "ရပ်ကွက်/ကျေးရွာအုပ်စု အမည်", "field":"ward_village", "type": "autocomplete", "length": 50 },
   { "label": "မဲစာရင်းအမှတ်စဉ်", "field": "voter_list_number", "type": "autocomplete", "length": 20 },
   { "label": "မွေးသက္ကရာဇ်", "field": "dob", "type": "date", "length": 50 },
   { "label": "လူမျိုး", "field": "nationality", "type": "string", "length": 50 },
