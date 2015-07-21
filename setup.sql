@@ -30,11 +30,11 @@ CREATE TABLE "entries" (
 CREATE TABLE "forms" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "consensus_id" TEXT,
-    "approved" BOOLEAN,
+    "approved" BOOLEAN DEFAULT 0,
     "scan_file" TEXT,
-    "color_scan" BOOLEAN,
+    "color_scan" BOOLEAN DEFAULT 0,
     "first_entry_id" INTEGER,
     "second_entry_id" INTEGER,
     "third_entry_id" INTEGER,
-    "entries_match" BOOLEAN
+    "entries_match" BOOLEAN DEFAULT 0
 );
