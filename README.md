@@ -57,7 +57,7 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /type-form = page to render form, requires login
 
-/get-form
+/get-form = return next form image and id as JSON
 
 ```
 {

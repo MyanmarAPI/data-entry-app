@@ -123,6 +123,13 @@ var finishForm = function(thirdEntry) {
 
 var findNextForm = function(req, res, format) {
   var endResponse = renderForm;
+  var redirectResponse = function() {
+    if (format === 'json') {
+      res.redirect('/get-form?third=true');
+    } else {
+      res.redirect('/type-form?third=true')
+    }
+  };
   if (format === 'json') {
     endResponse = respondForm;
   }
@@ -144,12 +151,13 @@ var findNextForm = function(req, res, format) {
           console.log('all matched');
           db.run('UPDATE forms SET entries_match = 1 WHERE id = ' + second_entry.form_id);
           db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
-          return res.redirect('/type-form?third=true');
+          if ()
+          return redirectResponse();
         }
         if (second_entry.user_id === req.user.id * 1) {
           // current user already reviewed this form
           console.log('user cannot review');
-          return res.redirect('/type-form?third=true');
+          return redirectResponse();
         }
         second_entry.scan_file = form_seeking_match.scan_file;
         second_entry.id = second_entry.form_id;
