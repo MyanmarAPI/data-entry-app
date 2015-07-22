@@ -21,7 +21,7 @@ var isLoggedIn = function(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.redirect('/login');
+  res.redirect('/status');
 };
 
 // Zawgyi converter
@@ -74,6 +74,31 @@ var renderForm = function(res, row, order, matching) {
   }
 };
 
+var respondForm = function(res, row, order, matching) {
+  if ((typeof matching == 'undefined') || !matching) {
+    matching = [];
+  }
+
+  // display form to user
+  res.json({
+    form: {
+      id: row.id,
+      order: order,
+      scan_file: '/form_images/' + row.scan_file
+    },
+    matching: matching
+  });
+
+  // mark form as actively worked-on
+  if (order === 1) {
+    db.get("UPDATE forms SET first_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
+  } else if (order === 2) {
+    db.get("UPDATE forms SET second_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
+  } else if (order === 3) {
+    db.get("UPDATE forms SET third_entry_id = -1 WHERE scan_file != '000000-test.png' AND id = " + row.id);
+  }
+};
+
 var entries_match = function(entry1, entry2) {
   var fields = ["full_name", "norm_national_id", "ward_village", "dob", "education", "occupation", "address_perm", "address_mail", "constituency", "party", "father", "father_origin", "mother", "mother_origin"];
   var matching = [];
@@ -96,15 +121,22 @@ var finishForm = function(thirdEntry) {
   db.run('UPDATE forms SET entries_match = 1 WHERE form_id = ' + thirdEntry.form_id);
 };
 
-app.get('/type-form', isLoggedIn, function(req, res) {
+var findNextForm = function(req, res, format) {
+  var endResponse = renderForm;
+  if (format === 'json') {
+    endResponse = respondForm;
+  }
+
   db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_match AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
-      throw err;
+      return res.json({ status: 'error', error: err });
+      //throw err;
     }
     if (form_seeking_match && !req.query.third) {
       db.get('SELECT * FROM entries WHERE id = ' + form_seeking_match.second_entry_id, function(err, second_entry) {
         if (err) {
-          throw err;
+          return res.json({ status: 'error', error: err });
+          //throw err;
         }
         var matching = entries_match(form_seeking_match, second_entry);
         if (matching === true) {
@@ -121,32 +153,43 @@ app.get('/type-form', isLoggedIn, function(req, res) {
         }
         second_entry.scan_file = form_seeking_match.scan_file;
         second_entry.id = second_entry.form_id;
-        renderForm(res, second_entry, 3, matching);
+        endResponse(res, second_entry, 3, matching);
       });
       return;
     }
 
     db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND entries.user_id != ' + req.user.id, function(err, row) {
       if (err) {
-        throw err;
+        return res.json({ status: 'error', error: err });
+        // throw err;
       }
       if (!row) {
         // no forms waiting for second validator
         db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
           if (err) {
-            throw err;
+            return res.json({ status: 'error', error: err });
+            // throw err;
           }
           if (!row) {
-            res.send('No forms for you to digitize! (some may need a second validator)');
+            return res.json({ status: 'done' });
+            //res.send('No forms for you to digitize! (some may need a second validator)');
           } else {
-            renderForm(res, row, 1);
+            endResponse(res, row, 1);
           }
         });
       } else {
-        renderForm(res, row, 2);
+        endResponse(res, row, 2);
       }
     });
   });
+};
+
+app.get('/get-form', isLoggedIn, function(req, res) {
+  findNextForm(req, res, 'json');
+});
+
+app.get('/type-form', isLoggedIn, function(req, res) {
+  findNextForm(req, res, 'html');
 });
 
 app.post('/submit-form', isLoggedIn, function(req, res) {
