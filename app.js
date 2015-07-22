@@ -149,7 +149,7 @@ app.get('/type-form', isLoggedIn, function(req, res) {
   });
 });
 
-app.post('/type-form', isLoggedIn, function(req, res) {
+app.post('/submit-form', isLoggedIn, function(req, res) {
   var form_values = [];
   form_values.push(req.user.id);
   form_values.push(req.body.form_id * 1);
@@ -161,9 +161,11 @@ app.post('/type-form', isLoggedIn, function(req, res) {
   form_values = "'" + form_values.join("','") + "'";
   db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
     if (err) {
-      throw err;
+      return res.json({ status: 'error', error: err });
+      // throw err;
     }
     // record the entry
+    var entry_id = this.lastID;
     var order = req.body.order * 1;
     var entry_column = "first_entry_id";
     if (order === 2) {
@@ -172,8 +174,12 @@ app.post('/type-form', isLoggedIn, function(req, res) {
       entry_column = "third_entry_id";
       finishForm(req.body);
     }
-    db.get('UPDATE forms SET ' + entry_column + ' = ' + this.lastID + ' WHERE id = ' + req.body.form_id, function(err, row) {
-      res.redirect('/type-form');
+    db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+        // throw err;
+      }
+      res.json({ status: 'ok', entry: entry_id });
     });
   });
 });
