@@ -151,7 +151,6 @@ var findNextForm = function(req, res, format) {
           console.log('all matched');
           db.run('UPDATE forms SET entries_match = 1 WHERE id = ' + second_entry.form_id);
           db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
-          if ()
           return redirectResponse();
         }
         if (second_entry.user_id === req.user.id * 1) {
