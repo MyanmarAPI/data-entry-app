@@ -10,7 +10,12 @@ var compression = require("compression");
 // database for users and forms
 var fs = require("fs");
 var sqlite3 = require("sqlite3");
-var db = new sqlite3.Database('./database.sqlite3');
+var db;
+if (typeof global.it === 'function') {
+  db = new sqlite3.Database('./test.sqlite3');
+} else {
+  db = new sqlite3.Database('./database.sqlite3');
+}
 var timeago = require("timeago");
 
 // authentication
