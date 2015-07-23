@@ -215,6 +215,8 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   form_values.push(req.body.form_id * 1);
   form_values.push(myanmarNumbers(req.body.national_id));
   req.body.constituency_number = myanmarNumbers(req.body.constituency_number || '0');
+  req.body.serial = myanmarNumbers(req.body.serial || '0');
+
   for (var k in form_fields) {
     form_values.push(req.body[form_fields[k]]);
   }
@@ -269,10 +271,23 @@ app.get('/candidate/:national_id', function(req, res) {
     if (err) {
       throw err;
     }
-    rows = fixDates(rows);
-    res.render('entries', {
-      entries: rows
-    });
+    if (!rows.length) {
+      // try with serial number
+      db.all("SELECT id, full_name, saved FROM entries WHERE serial = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+        if (err) {
+          throw err;
+        }
+        rows = fixDates(rows);
+        res.render('entries', {
+          entries: rows
+        });
+      });
+    } else {
+      rows = fixDates(rows);
+      res.render('entries', {
+        entries: rows
+      });
+    }
   });
 });
 

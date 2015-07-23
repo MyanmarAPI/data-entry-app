@@ -78,6 +78,8 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /candidate/:national_id = list of entries for a national id - can be Myanmar or Latin numerals
 
+/candidate/:serial = list of entries with a serial number - can be Myanmar or Latin numerals
+
 /admin = links to /data-update and other pages; stats
 
 ## License
