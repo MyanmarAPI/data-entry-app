@@ -9,21 +9,23 @@ CREATE TABLE "entries" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "form_id" INTEGER,
     "user_id" INTEGER,
+    "house" TEXT,
+    "serial" TEXT,
     "full_name" TEXT,
     "national_id" TEXT,
     "norm_national_id" TEXT,
     "ward_village" TEXT,
+    "voter_list_number" TEXT,
     "dob" TEXT,
+    "nationality" TEXT,
+    "religion" TEXT,
     "education" TEXT,
     "occupation" TEXT,
     "address_perm" TEXT,
     "address_mail" TEXT,
-    "constituency" TEXT,
+    "constituency_name" TEXT,
+    "constituency_number" INTEGER,
     "party" TEXT,
-    "father" TEXT,
-    "father_origin" TEXT,
-    "mother" TEXT,
-    "mother_origin" TEXT,
     "saved" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -36,5 +38,5 @@ CREATE TABLE "forms" (
     "first_entry_id" INTEGER,
     "second_entry_id" INTEGER,
     "third_entry_id" INTEGER,
-    "entries_match" BOOLEAN DEFAULT 0
+    "entries_done" BOOLEAN DEFAULT 0
 );

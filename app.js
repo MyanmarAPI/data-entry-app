@@ -18,6 +18,8 @@ if (typeof global.it === 'function') {
 }
 var timeago = require("timeago");
 
+var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party'];
+
 // authentication
 var passport = require("passport");
 var userAuth = require("./user-auth");
@@ -104,17 +106,20 @@ var respondForm = function(res, row, order, matching) {
   }
 };
 
-var entries_match = function(entry1, entry2) {
-  var fields = ["full_name", "norm_national_id", "ward_village", "dob", "education", "occupation", "address_perm", "address_mail", "constituency", "party", "father", "father_origin", "mother", "mother_origin"];
+var entries_done = function(entry1, entry2) {
   var matching = [];
-  for (var i = 0; i < fields.length; i++) {
-    if (entry1[fields[i]].replace(/\s/g, '') === entry2[fields[i]].replace(/\s/g, '')) {
-      matching.push(fields[i]);
+  for (var i = 0; i < form_fields.length; i++) {
+    // make integer fields into strings too, for a generic data cleaner
+    entry1[form_fields[i]] += "";
+    entry2[form_fields[i]] += "";
+
+    if (entry1[form_fields[i]].replace(/\s/g, '') === entry2[form_fields[i]].replace(/\s/g, '')) {
+      matching.push(form_fields[i]);
     } else {
-      console.log( fields[i] + ": " + entry1[fields[i]] + " did not match " + entry2[fields[i]]);
+      console.log( form_fields[i] + ": " + entry1[form_fields[i]] + " did not match " + entry2[form_fields[i]]);
     }
   }
-  if (fields.length === matching.length) {
+  if (form_fields.length === matching.length) {
     return true;
   } else {
     return matching;
@@ -123,7 +128,7 @@ var entries_match = function(entry1, entry2) {
 
 var finishForm = function(thirdEntry) {
   // mark non-consensus data
-  db.run('UPDATE forms SET entries_match = 1 WHERE form_id = ' + thirdEntry.form_id);
+  db.run('UPDATE forms SET entries_done = 1 WHERE form_id = ' + thirdEntry.form_id);
 };
 
 var findNextForm = function(req, res, format) {
@@ -139,7 +144,7 @@ var findNextForm = function(req, res, format) {
     endResponse = respondForm;
   }
 
-  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_match AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
+  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
       //throw err;
@@ -150,11 +155,11 @@ var findNextForm = function(req, res, format) {
           return res.json({ status: 'error', error: err });
           //throw err;
         }
-        var matching = entries_match(form_seeking_match, second_entry);
+        var matching = entries_done(form_seeking_match, second_entry);
         if (matching === true) {
           // past entries match - update DB
           console.log('all matched');
-          db.run('UPDATE forms SET entries_match = 1 WHERE id = ' + second_entry.form_id);
+          db.run('UPDATE forms SET entries_done = 1 WHERE id = ' + second_entry.form_id);
           db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
           return redirectResponse();
         }
@@ -209,12 +214,12 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   form_values.push(req.user.id);
   form_values.push(req.body.form_id * 1);
   form_values.push(myanmarNumbers(req.body.national_id));
-  var form_keys = ['full_name', 'national_id', 'ward_village', 'dob', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency', 'party', 'father', 'father_origin', 'mother', 'mother_origin'];
-  for (var k in form_keys) {
-    form_values.push(req.body[form_keys[k]]);
+  req.body.constituency_number = myanmarNumbers(req.body.constituency_number || '0');
+  for (var k in form_fields) {
+    form_values.push(req.body[form_fields[k]]);
   }
   form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_keys.join(',') + ') VALUES (' + form_values + ')', function(err) {
+  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
     if (err) {
       return res.json({ status: 'error', error: err });
       // throw err;
@@ -242,7 +247,7 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
 // review entries
 app.get("/admin", function(req, res) {
   db.get("SELECT COUNT(*) AS total FROM forms", function(err, r1) {
-    db.get("SELECT COUNT(*) AS finished FROM forms WHERE entries_match", function(err, r2) {
+    db.get("SELECT COUNT(*) AS finished FROM forms WHERE entries_done", function(err, r2) {
       res.render('admin', {
         total: r1.total,
         finished: r2.finished
