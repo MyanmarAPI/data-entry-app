@@ -17,6 +17,7 @@ if (typeof global.it === 'function') {
   db = new sqlite3.Database('./database.sqlite3');
 }
 var timeago = require("timeago");
+var csv = require("fast-csv");
 
 var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party'];
 
@@ -235,7 +236,11 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
       if (err) {
         return res.json({ status: 'error', error: err });
       }
-      res.json({ status: 'ok', entry: entry_id });
+      if (req.query.format === 'html') {
+        res.redirect('/type-form');
+      } else {
+        res.json({ status: 'ok', entry: entry_id });
+      }
     });
   });
 });
@@ -303,6 +308,21 @@ app.get('/entries.json', function(req, res) {
       return res.json({ status: 'error', error: err });
     }
     res.json(rows);
+  });
+});
+
+app.get('/entries.csv', function(req, res) {
+  db.all('SELECT * FROM entries ORDER BY saved', function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    csv.writeToString(rows, { headers: true }, function(err, data){
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      res.send(data);
+      res.end();
+    });
   });
 });
 

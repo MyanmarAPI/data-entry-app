@@ -72,7 +72,11 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /submit-form = POST here, get JSON response { status: "ok", entry: 101 } OR { status: "error", error: "Error Message" } OR { status: "done" } -- requires login
 
-/entries = index of recent entries
+/entries = index of most recent entries
+
+/entries.json = direct JSON export of all data
+
+/entries.csv = direct CSV export of all data
 
 /entries/:username = list of recent entries by a user
 
