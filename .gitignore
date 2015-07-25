@@ -7,3 +7,5 @@ test/bower_components/
 *.sqlite3
 .DS_Store
 app/form_images/*.png
+app/fax_images/*.png
+app/color_images/*.png

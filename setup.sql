@@ -34,7 +34,7 @@ CREATE TABLE "forms" (
     "consensus_id" TEXT,
     "approved" BOOLEAN DEFAULT 0,
     "scan_file" TEXT,
-    "color_scan" BOOLEAN DEFAULT 0,
+    "color_scan" TEXT,
     "first_entry_id" INTEGER,
     "second_entry_id" INTEGER,
     "third_entry_id" INTEGER,
