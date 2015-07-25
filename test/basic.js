@@ -105,7 +105,7 @@ describe('Registration, login, first entry', function() {
         }
         var jrep = JSON.parse(res.text);
         form_id = jrep.form.id;
-        assert.include(jrep.form.scan_file, '/form_images/');
+        assert.include(jrep.form.scan_file, '/fax_images/');
         assert.equal(jrep.form.order, 1);
         assert.equal(jrep.matching.length, 0);
         done();
@@ -180,7 +180,7 @@ describe('Second entry offered to second user', function() {
         console.log(res.text);
         var jrep = JSON.parse(res.text);
         assert.equal(jrep.form.id, form_id);
-        assert.include(jrep.form.scan_file, '/form_images/');
+        assert.include(jrep.form.scan_file, '/fax_images/');
         assert.equal(jrep.form.order, 2);
         assert.equal(jrep.matching.length, 0);
         done();
@@ -245,7 +245,7 @@ describe('Issue-solving entry offered to third user', function() {
         }
         var jrep = JSON.parse(res.text);
         assert.equal(jrep.form.id, form_id);
-        assert.include(jrep.form.scan_file, '/form_images/');
+        assert.include(jrep.form.scan_file, '/fax_images/');
         assert.equal(jrep.form.order, 3);
         assert.equal(jrep.matching.indexOf("full_name") > -1, true);
         assert.equal(jrep.matching.indexOf("national_id"), -1);

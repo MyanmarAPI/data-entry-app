@@ -17,6 +17,7 @@ if (typeof global.it === 'function') {
   db = new sqlite3.Database('./database.sqlite3');
 }
 var timeago = require("timeago");
+var csv = require("fast-csv");
 
 var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party'];
 
@@ -71,7 +72,7 @@ var renderForm = function(res, row, order, matching) {
     form: {
       id: row.id,
       order: order,
-      scan_file: '/form_images/' + row.scan_file
+      scan_file: row.scan_file
     },
     matching: matching
   });
@@ -96,7 +97,7 @@ var respondForm = function(res, row, order, matching) {
     form: {
       id: row.id,
       order: order,
-      scan_file: '/form_images/' + row.scan_file
+      scan_file: row.scan_file
     },
     matching: matching
   });
@@ -152,13 +153,11 @@ var findNextForm = function(req, res, format) {
   db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
-      //throw err;
     }
     if (form_seeking_match && !req.query.third) {
       db.get('SELECT * FROM entries WHERE id = ' + form_seeking_match.second_entry_id, function(err, second_entry) {
         if (err) {
           return res.json({ status: 'error', error: err });
-          //throw err;
         }
         var matching = entries_done(form_seeking_match, second_entry);
         if (matching === true) {
@@ -183,14 +182,12 @@ var findNextForm = function(req, res, format) {
     db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND entries.user_id != ' + req.user.id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
-        // throw err;
       }
       if (!row) {
         // no forms waiting for second validator
         db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
           if (err) {
             return res.json({ status: 'error', error: err });
-            // throw err;
           }
           if (!row) {
             return res.json({ status: 'done' });
@@ -229,7 +226,6 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
     if (err) {
       return res.json({ status: 'error', error: err });
-      // throw err;
     }
     // record the entry
     var entry_id = this.lastID;
@@ -244,9 +240,12 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
     db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
-        // throw err;
       }
-      res.json({ status: 'ok', entry: entry_id });
+      if (req.query.format === 'html') {
+        res.redirect('/type-form');
+      } else {
+        res.json({ status: 'ok', entry: entry_id });
+      }
     });
   });
 });
@@ -272,26 +271,31 @@ var fixDates = function(rows) {
 
 app.get('/candidate/:national_id', function(req, res) {
   var norm_number = myanmarNumbers(req.params.national_id);
-  db.all("SELECT id, full_name, saved FROM entries WHERE norm_national_id = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
-    if (err) {
-      throw err;
-    }
-    if (!rows.length) {
-      // try with serial number
-      db.all("SELECT id, full_name, saved FROM entries WHERE serial = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
-        if (err) {
-          throw err;
-        }
-        rows = fixDates(rows);
-        res.render('entries', {
-          entries: rows
-        });
-      });
+  var respondCandidates = function(rows) {
+    if (req.query.format === 'json') {
+      res.json(rows);
     } else {
       rows = fixDates(rows);
       res.render('entries', {
         entries: rows
       });
+    }
+  };
+  db.all("SELECT * FROM entries WHERE norm_national_id = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    if (!rows.length) {
+      // try with serial number
+      db.all("SELECT * FROM entries WHERE serial = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        respondCandidates(rows);
+      });
+    } else {
+      // candidates match national id
+      respondCandidates(rows);
     }
   });
 });
@@ -299,7 +303,7 @@ app.get('/candidate/:national_id', function(req, res) {
 app.get('/entries', function(req, res) {
   db.all('SELECT id, full_name, saved FROM entries ORDER BY saved DESC LIMIT 20', function(err, rows) {
     if (err) {
-      throw err;
+      return res.json({ status: 'error', error: err });
     }
     rows = fixDates(rows);
     res.render('entries', {
@@ -308,11 +312,41 @@ app.get('/entries', function(req, res) {
   });
 });
 
+app.get('/entries.json', function(req, res) {
+  db.all('SELECT * FROM entries ORDER BY saved', function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    res.json(rows);
+  });
+});
+
+app.get('/entries.csv', function(req, res) {
+  db.all('SELECT * FROM entries ORDER BY saved', function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    csv.writeToString(rows, { headers: true }, function(err, data){
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      res.send(data);
+      res.end();
+    });
+  });
+});
+
 app.get('/entries/:username', function(req, res) {
   db.get('SELECT * FROM users WHERE username = ?', req.params.username, function(err, user) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    if (!rows.length) {
+      return res.json({ status: 'done', error: 'no user with that username' });
+    }
     db.all('SELECT id, full_name, saved FROM entries WHERE user_id = ' + user.id + ' ORDER BY saved DESC LIMIT 20', function(err, rows) {
       if (err) {
-        throw err;
+        return res.json({ status: 'error', error: err });
       }
       rows = fixDates(rows);
       res.render('entries', {
@@ -325,7 +359,7 @@ app.get('/entries/:username', function(req, res) {
 app.get('/entry/:id', function(req, res) {
   db.get('SELECT * FROM entries INNER JOIN forms ON form_id WHERE entries.id = ' + req.params.id, function(err, row) {
     if (err) {
-      throw err;
+      return res.json({ status: 'error', error: err });
     }
     res.render('entry', {
       entry: row
@@ -333,36 +367,79 @@ app.get('/entry/:id', function(req, res) {
   });
 });
 
-// data maintenance
-app.get('/data-update', function(req, res) {
-  // find any new scan images and include them in the forms table
-  var files = fs.readdir(__dirname + "/app/form_images", function(err, files) {
+// data update and maintenance
+var scanImgDirectory = function(img_directory, color) {
+  if (img_directory.indexOf("fax_images") > -1) {
+    color = "bw";
+  } else if (img_directory.indexOf("color_images") > -1) {
+    color = "color";
+  } else if (!color || color !== "bw" || color !== "color") {
+    color = "bw";
+  }
+  var files = fs.readdir(__dirname + "/app/" + img_directory, function(err, files) {
     if (err) {
-      throw err;
+      return console.log(err);
     }
     var createForm = function(fname) {
       db.get('SELECT id FROM forms WHERE scan_file = ?', fname, function(err, row) {
+        if (err) {
+          return console.log(err);
+        }
         if (!row) {
-          db.get("INSERT INTO forms (scan_file, approved) VALUES ('" + fname + "', 0)", function(err) {
-            console.log('added form with scan file');
-          });
+          if (color === "color") {
+            if (fname.indexOf("000000-test") > -1) {
+              return;
+            }
+            db.get("INSERT INTO forms (scan_file, color_scan, approved) VALUES ('" + fname + "', '" + fname + "', 0)");
+          } else {
+            db.get("INSERT INTO forms (scan_file, approved) VALUES ('" + fname + "', 0)");
+          }
         }
       });
     };
     for (var i in files){
-      createForm(files[i]);
+      createForm('/' + img_directory + '/' + files[i]);
     }
-    res.send('updating database');
+  });
+};
+
+app.get('/data-update', function(req, res) {
+  // find any new scan images and include them in the forms table
+  if (req.query.dir && req.query.color) {
+    scanImgDirectory(req.query.dir, req.query.color);
+  } else {
+    scanImgDirectory("fax_images");
+    scanImgDirectory("color_images");
+  }
+  res.send('processing new images');
+});
+
+app.get('/stop-repeat', function(req, res) {
+  db.get("UPDATE forms SET entries_done = 1, color_scan = '" + req.query.path + "' WHERE id IN (" + req.query.repeats + ') AND color_scan IS NULL', function(err, row) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    res.json({ status: 'stopped editing on forms' });
   });
 });
 
 app.get('/activate-form', function(req, res) {
   // find any open forms and allow new editors to edit them
-  db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1; UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1; UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function(err, row) {
+  db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1', function(err, row) {
     if (err) {
-      throw err;
+      return res.json({ status: 'error', error: err });
     }
-    res.send('cleared forms');
+    db.get('UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1', function(err, row) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      db.get('UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function (err, row) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        res.json({ status: 'cleared forms' });
+      });
+    });
   });
 });
 

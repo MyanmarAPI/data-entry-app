@@ -5,7 +5,7 @@ html
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
     img(src=form.scan_file)
-    form(action="/type-form", method="post")
+    form(action="/submit-form?format=html", method="post")
       input(type="hidden", name="entry_id", value="")
       input(type="hidden", name="form_id", value=form.id)
       input(type="hidden", name="order", value=form.order)

@@ -59,6 +59,8 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /get-form = return next form image and id as JSON
 
+/stop-repeat?color_img=path&repeats=id1,id2 = stop new entries on repeat forms; set their color images to this path
+
 ```
 {
   "form":{
@@ -72,13 +74,19 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /submit-form = POST here, get JSON response { status: "ok", entry: 101 } OR { status: "error", error: "Error Message" } OR { status: "done" } -- requires login
 
-/entries = index of recent entries
+/entries = index of most recent entries
+
+/entries.json = direct JSON export of all data
+
+/entries.csv = direct CSV export of all data
 
 /entries/:username = list of recent entries by a user
 
 /candidate/:national_id = list of entries for a national id - can be Myanmar or Latin numerals
 
 /candidate/:serial = list of entries with a serial number - can be Myanmar or Latin numerals
+
+/candidate/:national_id_or_serial?format=json = list of entries matching this serial number - useful if we are looking at a color image
 
 /admin = links to /data-update and other pages; stats
 
