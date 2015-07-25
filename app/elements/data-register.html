@@ -1,0 +1,69 @@
+<dom-module id="data-register">
+	<style>
+	:host{
+		@apply(--layout-center-center);
+		@apply(--layout-vertical);
+	}
+	paper-material{
+		padding: 15px 30px;
+		background-color: #FFF;
+		height: 400px;
+		width: 400px;
+		
+	}
+	#logo{
+		width: 200px;
+		height: 200px;
+		margin-bottom: 30px;
+	}
+	.submit{
+		margin-top: 1em;
+	}
+	</style>
+	<template>
+		<iron-image id="logo" src="../images/mps-logo-no-text.png" preload sizing="contain" class=""></iron-image>
+		<paper-material class="layout center-center" elevation="1">
+			<h1>Register</h1>
+			<paper-toast id="register-info" text=""></paper-toast>
+		  	<form is="iron-form" id="register-form" method="post" action="/register" on-iron-form-response="onResponse" on-iron-form-error="onError">
+		  	  	<paper-input name="email" label="Email" required></paper-input>
+			  	<paper-input name="password" type="password" label="Password" required></paper-input>
+		
+			  	<div class="submit layout vertical">
+						<paper-button raised on-click="submitForm" class="layout end">register</paper-button>
+				</div>
+		  	</form>
+		  	
+		</paper-material> 
+	</template>
+</dom-module>
+<script>
+(function() {
+	Polymer({
+		is:"data-register",
+		submitForm:function(){
+			this.$$('#register-form').submit();
+			console.log(app.endpoints);
+		},
+		onResponse:function(ev){
+			if(ev.detail.status==='ok'){
+				var info=this.$$('#register-info');
+				info.text="User successfully registered, redirect to login..";
+				info.show();
+				page.redirect('/applogin');
+			}
+			else{
+				var info=this.$$('#register-info');
+				info.text="Something problem with your registeration, please try again later";
+				info.show();
+			}			
+		},
+		onError:function(){
+			var info=this.$$('#register-info');
+			info.text="Something problem with your registeration, please try again later";
+			info.show();
+		}
+
+	});
+})();
+</script>

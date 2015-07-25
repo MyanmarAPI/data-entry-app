@@ -13,7 +13,7 @@ module.exports = {
     var salt = process.env.SALT || 'ekcweio92dmqbd';
     var salted_password = hashPassword(req.body.password, salt);
 
-    db.get("INSERT INTO users (username, password, salt) VALUES ('" + [req.body.username, salted_password, salt].join("','") + "')", function(err) {
+    db.get("INSERT INTO users (username, password, salt) VALUES ('" + [req.body.email, salted_password, salt].join("','") + "')", function(err) {
       if (err) {
         throw err;
       }
@@ -36,11 +36,11 @@ module.exports = {
         }
         if(!user){
           console.log('no user');
-          return done(null, false, req.flash('loginMessage', 'No user found.'));
+          return done(null, false, { error:'no user' });
         }
         if (hashPassword(req.body.password, user.salt) != user.password) {
           console.log('bad password');
-          return done(null, false, req.flash('loginMessage', 'Bad password.'));
+          return done(null, false,  { error:'invalid password' });
         }
         return done(null, user);
       });

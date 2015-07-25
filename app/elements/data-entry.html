@@ -1,0 +1,150 @@
+<dom-module id="data-entry">
+<style type="text/css">
+
+	.col{
+		margin-right: 30px;
+	}
+	.image-wrapper{
+		overflow: hidden;
+		border:1px solid #CCC;
+	}
+	#form-scanned{
+		margin: -50px -100px 0 -100px ;
+		width: 130%;
+	}
+	#form paper-input::shadow input{
+		font-family: 'noto_sans_myanmarregular';
+	}
+	.input-select{
+		position: relative;
+	}
+	.input-select paper-menu{
+		padding: 0;
+	}
+	.input-select iron-collapse{
+		position: absolute;
+		left: 0;
+		right: 0;
+		z-index: 10;
+	}
+	#form-container{
+		padding: 20px;
+	}
+</style>
+<template>
+	<iron-ajax
+    auto
+    url="../form.json"
+    handle-as="json"
+    last-response="{{formfields}}">
+
+    <iron-ajax
+    	id="get-form"
+	    url="get-form"
+	    handle-as="json"
+	    on-response="_handleResponse">
+	<div id="form-container" class="horizontal layout">
+		<div class="col flex-7">
+		<div class="image-wrapper">
+			<img id="form-scanned" src="../form_images/000000-test.png"/>
+		</div>
+		</div>
+		<div class="flex-5 col">Form
+			<form is="iron-form" id="form" method="post" action="/form/handler">
+				<template is="dom-repeat" items="[[formfields]]" as="item">
+					
+						<template is="dom-if" if="{{isTypeOf('string',item.type)}}">
+							<div class="input input-text">
+						       <paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+					      	</div>
+					    </template>
+
+					    <template is="dom-if" if="{{isTypeOf('string-options',item.type)}}">
+					    	<span>[[item.label]]</span>
+							<div class="input input-text">
+						       <paper-input name="[[item.field]]" label="[[item.short_label]]" on-focus="_focusHandler" required="true"></paper-input>
+					      	</div>
+					    </template>
+					    
+					    <template is="dom-if" if="{{isTypeOf('select',item.type)}}">
+					    	<div class="input input-select">
+					    		<paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" on-enter-key="_selectItem"></paper-input>
+					    		<iron-collapse>
+						    		<paper-material class="options" elevation="1">
+									    <paper-menu>
+										  	<template is="dom-repeat" items="[[item.options]]" as="option">
+										  		<paper-item>[[option]]</paper-item>
+										  	</template>
+										</paper-menu>
+									</paper-material>
+								</iron-collapse>
+							</div>
+					    </template>
+
+				    </div>
+				</template>
+				<div class="submit">
+					<paper-button raised>Submit Form</paper-button>
+				</div>
+			</form>
+			
+		</div>	
+	</div>
+</template>
+</dom-module>
+<script>
+(function() {
+	Polymer({
+      is: 'data-entry',
+      isTypeOf:function(type,val){
+
+      		if(type===val){
+      			console.log(type);
+      			return true;
+      		}
+      		else
+      			return false;
+      },
+      _handleForm:function(ev){
+      		if(ev.detail.response.status==='ok'){
+      		this.formfields=ev.detail.response.form;
+      	}
+      	else{
+      		page.redirect('/applogin');
+      	}
+      },
+      _focusHandler:function(el){
+      		var parent=Polymer.dom(el.srcElement).parentNode;
+      		var select=parent.querySelector('iron-collapse');
+      		Polymer.dom(this.root).querySelectorAll('iron-collapse').forEach(function(optionEl){
+      			if(optionEl.opened){
+      				var parentOption=Polymer.dom(optionEl).parentNode;
+	      			var menu=parentOption.querySelector('paper-menu');
+
+	      			if(typeof menu.selectedItems!=='undefined'){
+	      				var input=parentOption.querySelector('paper-input');
+	      				input.value=menu.selectedItems[0].textContent;
+	      			}
+	      			optionEl.toggle();
+      			}
+      		});
+
+      		if(select!==null){
+      			console.log(select);
+      			select.toggle();
+      			console.log(parent.querySelector('paper-menu').focusedItem);
+      			parent.querySelector('paper-menu').select(0);
+
+      		}
+      		
+      },
+      _selectItem:function(ev){
+
+      },
+      _hideDropdown:function(el){
+      		var parent=Polymer.dom(el.srcElement).parentNode;
+      		parent.querySelector('paper-material').style.display='hidden';
+      },
+  	});
+})();
+</script>

@@ -28,7 +28,7 @@ var isLoggedIn = function(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.redirect('/status');
+  res.json({status:'error',error:'not authenticate'});
 };
 
 // Zawgyi converter
@@ -39,6 +39,11 @@ var myanmarNumbers = require("myanmar-numbers").myanmarNumbers;
 
 // set up server
 var app = express();
+
+//serve static files from app and bowers directory
+app.use(express.static('app'));
+app.use('/bower_components',express.static('bower_components'));
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 app.use(express['static'](__dirname + '/app'));
@@ -362,27 +367,28 @@ app.get('/activate-form', function(req, res) {
 });
 
 // user authentication sections
-app.get('/register', function(req, res) {
-  res.render('register');
-});
+
 
 app.post('/register', function(req, res) {
   userAuth.createUser(req, db, function() {
-    res.redirect('/login?state=newuser');
+    res.json({status:'ok'});
   });
 });
 
-app.get('/login', function(req, res) {
-  res.render('login');
+app.post('/login', function(req, res, next) {
+  passport.authenticate('local-login', function(err, user, info) {
+    //if (err) { return next(err); }
+    
+    if (!user)  
+      res.json({status:'error',error:info.error}); 
+    else 
+      res.json({status:'ok',user:user}); 
+
+  })(req, res, next);
 });
 
-app.post('/login', passport.authenticate('local-login', {
-  successRedirect: '/type-form',
-  failureRedirect: '/login?state=failed'
-}));
-
 // launch the server process
-var server = app.listen(process.env.PORT || 3000, function() {
+var server = app.listen(process.env.PORT || 8080, function() {
   var port = server.address().port;
   console.log('Serving on http://localhost:' + port);
 });

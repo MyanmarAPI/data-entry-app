@@ -1,0 +1,70 @@
+<dom-module id="data-login">
+	<style>
+	:host{
+		@apply(--layout-center-center);
+		@apply(--layout-vertical);
+	}
+	paper-material{
+		padding: 15px 30px;
+		background-color: #FFF;
+		height: 350px;
+		width: 400px;
+		
+	}
+	#logo{
+		width: 200px;
+		height: 200px;
+		margin-bottom: 30px;
+	}
+	.submit{
+		margin-top: 1em;
+	}
+	</style>
+	<template>
+		<iron-image id="logo" src="../images/mps-logo-no-text.png" preload sizing="contain" class=""></iron-image>
+		<paper-material class="layout center-center" elevation="1">
+			<h1>Login</h1>
+			<paper-toast id="login-info" text=""></paper-toast>
+		  	<form is="iron-form" id="login-form" method="post" action="/login" on-iron-form-response="onResponse" on-iron-form-error="onError">
+		  	  	<paper-input label="User" name="email" required></paper-input>
+			  	<paper-input type="password" name="password" label="Password" required></paper-input>
+			  	<div class="submit layout vertical">
+						<paper-button raised on-click="submitForm" class="layout end">Login</paper-button>
+				</div>
+				<p class="small">Doesn't have an account? <a href="/appreg"> Register</a> first</p>
+		  	</form>
+		  	
+		</paper-material> 
+	</template>
+</dom-module>
+<script>
+(function() {
+	Polymer({
+		is:"data-login",
+		submitForm:function(){
+			this.$$('#login-form').submit();
+		},
+		onResponse:function(ev){
+
+			if(ev.detail.status==='ok'){
+				page.redirect('/');
+			}
+			else{
+				console.log(ev.detail.error);
+				var info=this.$$('#login-info');
+				if(ev.detail.error==='no user')
+					info.text="No user found, please register first!";
+				else if(ev.detail.error.error==='invalid password')
+					info.text="Invalid password, please check your login";
+				info.show();
+			}
+		},
+		onError:function(){
+			var info=this.$$('#login-info');
+			info.text="Something problem with login, please try again later";
+			info.show();
+		}
+
+	});
+})();
+</script>
