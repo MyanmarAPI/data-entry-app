@@ -409,13 +409,32 @@ app.get('/data-update', function(req, res) {
   res.send('processing new images');
 });
 
-app.get('/activate-form', function(req, res) {
-  // find any open forms and allow new editors to edit them
-  db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1; UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1; UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function(err, row) {
+app.get('/stop-repeat', function(req, res) {
+  db.get("UPDATE forms SET entries_done = 1, color_scan = '" + req.query.path + "' WHERE id IN (" + req.query.repeats + ') AND color_scan IS NULL', function(err, row) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
-    res.send('cleared forms');
+    res.json({ status: 'stopped editing on forms' });
+  });
+});
+
+app.get('/activate-form', function(req, res) {
+  // find any open forms and allow new editors to edit them
+  db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1', function(err, row) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    db.get('UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1', function(err, row) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      db.get('UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function (err, row) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        res.json({ status: 'cleared forms' });
+      });
+    });
   });
 });
 

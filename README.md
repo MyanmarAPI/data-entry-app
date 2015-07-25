@@ -59,6 +59,8 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /get-form = return next form image and id as JSON
 
+/stop-repeat?color_img=path&repeats=id1,id2 = stop new entries on repeat forms; set their color images to this path
+
 ```
 {
   "form":{
