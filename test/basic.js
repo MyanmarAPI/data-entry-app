@@ -34,7 +34,7 @@ describe('Registration, login, first entry', function() {
   it('should be able to register', function(done) {
     agent.post('/register')
       .send({
-        username: 'test',
+        email: 'test',
         password: 'test'
       })
       .expect(302)
@@ -153,7 +153,7 @@ describe('Second entry offered to second user', function() {
   it('should register second user', function(done) {
     agent.post('/register')
       .send({
-        username: 'test2',
+        email: 'test2',
         password: 'test2'
       })
       .expect(302)
@@ -219,7 +219,7 @@ describe('Issue-solving entry offered to third user', function() {
   it('should register third user', function(done) {
     agent.post('/register')
       .send({
-        username: 'test3',
+        email: 'test3',
         password: 'test3'
       })
       .expect(302)
