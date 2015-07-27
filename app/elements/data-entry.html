@@ -42,31 +42,33 @@
     	id="get-form"
 	    url="/get-form"
 	    handle-as="json"
-	    on-response="_handleResponse">
+	    on-response="_handleForm">
 	<div id="form-container" class="horizontal layout">
 		<div class="col flex-7">
 		<div class="image-wrapper">
-			<img id="form-scanned" src="../fax_images/000000-test.png"/>
+			<img id="form-scanned" src="{{form_scanned}}"/>
 		</div>
 		</div>
 		<div class="flex-5 col">Form
+		<paper-toast id="form-info" text=""></paper-toast>
 			<form is="iron-form" id="form" method="post" action="/form/handler">
+				<input type="hidden" name="form_id" value="{{form_id}}">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
 
-						<template is="dom-if" if="{{isTypeOf('string',item.type)}}">
+						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}">
 							<div class="input input-text">
 						       <paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{isTypeOf('string-options',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('string-options',item.type)}}">
 					    	<span>[[item.label]]</span>
 							<div class="input input-text">
 						       <paper-input name="[[item.field]]" label="[[item.short_label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{isTypeOf('select',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}">
 					    	<div class="input input-select">
 					    		<paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" on-enter-key="_selectItem"></paper-input>
 					    		<iron-collapse>
@@ -96,25 +98,40 @@
 (function() {
 	Polymer({
       is: 'data-entry',
-      isTypeOf:function(type,val){
-
+      properties:{
+      	form_id:Number,
+      	form_scanned:{
+      		type:String,
+      		value:'../images/mps-logo-no-text.png'
+      	}
+      },
+   
+      _isTypeOf:function(type,val){
       		if(type===val){
-      			console.log(type);
       			return true;
       		}
       		else
       			return false;
       },
+      ready:function(){
+      	this.loadForm();
+      },
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
       },
       _handleForm:function(ev){
-      		if(ev.detail.response.status==='ok'){
-      		this.formfields=ev.detail.response.form;
-      	}
-      	else{
-      		page.redirect('/applogin');
-      	}
+      		if(typeof ev.detail.response.form !=='undefined'){
+      			this.form_scanned=ev.detail.response.form.scan_file;
+      			this.form_id=ev.detail.response.form.id;
+		  	}
+		  	else if(ev.detail.response.status==='error'){
+		  		page.redirect('/applogin');
+		  	}
+		  	else if(ev.detail.response.status==='done'){
+		  		var forminfo=this.$$('#form-info');
+		  		forminfo.text="All image already process please try again later!";
+		  		forminfo.show();
+		  	}
       },
       _focusHandler:function(el){
       		var parent=Polymer.dom(el.srcElement).parentNode;

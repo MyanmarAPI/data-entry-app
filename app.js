@@ -180,7 +180,7 @@ var findNextForm = function(req, res, format) {
       });
       return;
     }
-
+    console.log(req.user);
     db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND entries.user_id != ' + req.user.id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
@@ -191,6 +191,7 @@ var findNextForm = function(req, res, format) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }
+          console.log(row);
           if (!row) {
             return res.json({ status: 'done' });
             //res.send('No forms for you to digitize! (some may need a second validator)');
@@ -400,6 +401,7 @@ var scanImgDirectory = function(img_directory, color) {
       });
     };
     for (var i in files){
+      console.log('add image'+files[i]);
       createForm('/' + img_directory + '/' + files[i]);
     }
   });
