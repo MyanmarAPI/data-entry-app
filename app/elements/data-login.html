@@ -47,6 +47,9 @@
 		onResponse:function(ev){
 
 			if(ev.detail.status==='ok'){
+				var dataentry=Polymer.dom(document).querySelector('data-entry');
+				dataentry.loadForm();
+				console.log(dataentry);
 				page.redirect('/');
 			}
 			else{

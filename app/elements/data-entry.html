@@ -40,7 +40,7 @@
 
     <iron-ajax
     	id="get-form"
-	    url="get-form"
+	    url="/get-form"
 	    handle-as="json"
 	    on-response="_handleResponse">
 	<div id="form-container" class="horizontal layout">
@@ -104,6 +104,9 @@
       		}
       		else
       			return false;
+      },
+      loadForm:function(){
+      		this.$$('#get-form').generateRequest();
       },
       _handleForm:function(ev){
       		if(ev.detail.response.status==='ok'){

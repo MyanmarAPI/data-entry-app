@@ -45,8 +45,9 @@ var app = express();
 app.use(express.static('app'));
 app.use('/bower_components',express.static('bower_components'));
 
-app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
+//app.set('views', __dirname + '/views');
+//app.set('view engine', 'jade');
+
 app.use(express['static'](__dirname + '/app'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -459,7 +460,7 @@ app.post('/login', function(req, res, next) {
     if (!user)  
       res.json({status:'error',error:info.error}); 
     else 
-      res.json({status:'ok',user:user}); 
+      res.json({status:'ok',user:{id:user.id,email:user.username}); 
 
   })(req, res, next);
 });
