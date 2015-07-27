@@ -4,8 +4,7 @@ html
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
-    - scan_image = "/form_images/" + entry.scan_file
-    img(src=scan_image)
+    img(src=entry.scan_file)
     .form
       h4 ကိုယ်စားလှယ်လောင်း၏အမည်
       span= entry.full_name
@@ -14,3 +13,9 @@ html
       span &nbsp;(
       span= entry.norm_national_id
       span )
+
+      for key in Object.keys(entry)
+        strong= key
+        br
+        span= entry[key]
+        br
