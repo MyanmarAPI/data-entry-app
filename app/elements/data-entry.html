@@ -32,6 +32,13 @@
 	}
 </style>
 <template>
+	<iron-a11y-keys
+      id="enter-key-submit"
+      keys="enter"
+      target="[[target]]"
+      on-keys-pressed="submitForm">
+    </iron-a11y-keys>
+
 	<iron-ajax
     auto
     url="../form.json"
@@ -43,6 +50,10 @@
 	    url="/get-form"
 	    handle-as="json"
 	    on-response="_handleForm">
+	<iron-ajax
+    	id="get-source"
+	    handle-as="json"
+	    on-response="_generateDatalist">
 	<div id="form-container" class="horizontal layout">
 		<div class="col flex-7">
 		<div class="image-wrapper">
@@ -58,6 +69,29 @@
 						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}">
 							<div class="input input-text">
 						       <paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+					      	</div>
+					    </template>
+
+					    <template is="dom-if" if="{{_isTypeOf('number',item.type)}}">
+							<div class="input input-number">
+						       <paper-input type="number" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+					      	</div>
+					    </template>
+
+					    <template is="dom-if" if="{{_isTypeOf('date',item.type)}}">
+							<div class="input input-date">
+						       <paper-input name="[[item.field]]" type="date" always-float-label label="[[item.label]]" on-focus="_focusHandler" required="true" min="[[item.min]]" max="[[item.max]]"></paper-input>
+					      	</div>
+					    </template>
+
+					    <template is="dom-if" if="{{_isTypeOf('autocomplete',item.type)}}">
+							<div class="input input-autocomplete">
+						       <paper-input name="[[item.field]]" type="text" label="[[item.label]]" on-focus="_focusHandler" required="true" list$="{{_generateID(item.field)}}"></paper-input>
+						       <datalist id$="{{_generateID(item.field)}}" data-source$="[[item.source]]">
+						       		<template is="dom-repeat" items="[[item.options]]" as="option">
+						       			<option>[[option]]</option>
+						       		</template>						   
+						       </datalist>
 					      	</div>
 					    </template>
 
@@ -86,7 +120,7 @@
 				    </div>
 				</template>
 				<div class="submit">
-					<paper-button raised>Submit Form</paper-button>
+					<paper-button raised on-click="submitForm">Submit Form</paper-button>
 				</div>
 			</form>
 
@@ -103,9 +137,17 @@
       	form_scanned:{
       		type:String,
       		value:'../images/mps-logo-no-text.png'
-      	}
+      	},
+      	target: {
+	        type: Object,
+	        value: function() {
+	          return this.$$('#form');
+	        }
+	      }
       },
-   
+   	  _generateID:function(field){
+   	  		return 'list_'+field;
+   	  },
       _isTypeOf:function(type,val){
       		if(type===val){
       			return true;
@@ -116,8 +158,12 @@
       ready:function(){
       	this.loadForm();
       },
+      
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
+      },
+      submitForm:function(){
+      		this.$$('#form').submit();
       },
       _handleForm:function(ev){
       		if(typeof ev.detail.response.form !=='undefined'){
@@ -135,7 +181,7 @@
       },
       _focusHandler:function(el){
       		var parent=Polymer.dom(el.srcElement).parentNode;
-      		var select=parent.querySelector('iron-collapse');
+      		
       		Polymer.dom(this.root).querySelectorAll('iron-collapse').forEach(function(optionEl){
       			if(optionEl.opened){
       				var parentOption=Polymer.dom(optionEl).parentNode;
@@ -148,7 +194,7 @@
 	      			optionEl.toggle();
       			}
       		});
-
+      		var select=parent.querySelector('iron-collapse');
       		if(select!==null){
       			console.log(select);
       			select.toggle();
@@ -157,14 +203,35 @@
 
       		}
 
+      		var autocomplete=parent.querySelector('datalist');
+      		if(autocomplete!==null){
+      			var options=autocomplete.querySelectorAll('option');
+      			if(options.length===0){
+      				var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
+      				var params={
+					        url: autocomplete.dataset['source'],
+					        method: 'get',
+					        handleAs:'json'
+					      }
+	      			ajax.completes.then(function(req){
+	      				var template=autocomplete.querySelector('template');
+	      				template.items=req.response;
+	      				console.log(req.response);
+	      			});
+
+				    ajax.send(params);
+      			}
+      		}
+
       },
+   
       _selectItem:function(ev){
 
       },
       _hideDropdown:function(el){
       		var parent=Polymer.dom(el.srcElement).parentNode;
       		parent.querySelector('paper-material').style.display='hidden';
-      },
+      }
   	});
 })();
 </script>
