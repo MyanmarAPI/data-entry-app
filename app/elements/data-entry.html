@@ -42,7 +42,7 @@
 	<iron-ajax
     auto
     url="../form.json"
-    handle-as="json"
+    handle-as="json",
     last-response="{{formfields}}">
 
     <iron-ajax
@@ -68,26 +68,26 @@
 
 						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}">
 							<div class="input input-text">
-						       <paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('number',item.type)}}">
 							<div class="input input-number">
-						       <paper-input type="number" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+						       <paper-input id="{{_generateID('input_',item_field)}}" type="number" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('date',item.type)}}">
 							<div class="input input-date">
-						       <paper-input name="[[item.field]]" type="date" always-float-label label="[[item.label]]" on-focus="_focusHandler" required="true" min="[[item.min]]" max="[[item.max]]"></paper-input>
+						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" type="date" always-float-label label="[[item.label]]" on-focus="_focusHandler" required="true" min="[[item.min]]" max="[[item.max]]"></paper-input>
 					      	</div>
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('autocomplete',item.type)}}">
 							<div class="input input-autocomplete">
-						       <paper-input name="[[item.field]]" type="text" label="[[item.label]]" on-focus="_focusHandler" required="true" list$="{{_generateID(item.field)}}"></paper-input>
-						       <datalist id$="{{_generateID(item.field)}}" data-source$="[[item.source]]">
+						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" type="text" label="[[item.label]]" on-focus="_focusHandler" required="true" list$="{{_generateID('list_',item.field)}}"></paper-input>
+						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
 						       		</template>						   
@@ -96,24 +96,21 @@
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('string-options',item.type)}}">
-					    	<span>[[item.label]]</span>
-							<div class="input input-text">
-						       <paper-input name="[[item.field]]" label="[[item.short_label]]" on-focus="_focusHandler" required="true"></paper-input>
+							<div class="input input-dynamic">
+										<span class="label">[[item.label]]</span>
+						       			<paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+	
 					      	</div>
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}">
 					    	<div class="input input-select">
-					    		<paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" on-enter-key="_selectItem"></paper-input>
-					    		<iron-collapse>
-						    		<paper-material class="options" elevation="1">
-									    <paper-menu>
-										  	<template is="dom-repeat" items="[[item.options]]" as="option">
-										  		<paper-item>[[option]]</paper-item>
-										  	</template>
-										</paper-menu>
-									</paper-material>
-								</iron-collapse>
+					    		<span class="label">[[item.label]]</span>
+					    		<paper-radio-group  id="{{_generateID('input_',item_field)}}" attr-for-selected="value" on-change="_reRenderDynamicInput">
+					    			<template is="dom-repeat" items="[[item.options]]" as="option">
+					    				<paper-radio-button name="[[item.field]]" value="[[option.value]]" data-label$="[[option.label]]">[[option.value]]</paper-radio-button>
+					    			</template>
+								</paper-radio-group>
 							</div>
 					    </template>
 
@@ -145,8 +142,8 @@
 	        }
 	      }
       },
-   	  _generateID:function(field){
-   	  		return 'list_'+field;
+   	  _generateID:function(prefix,field){
+   	  		return prefix+field;
    	  },
       _isTypeOf:function(type,val){
       		if(type===val){
@@ -181,27 +178,6 @@
       },
       _focusHandler:function(el){
       		var parent=Polymer.dom(el.srcElement).parentNode;
-      		
-      		Polymer.dom(this.root).querySelectorAll('iron-collapse').forEach(function(optionEl){
-      			if(optionEl.opened){
-      				var parentOption=Polymer.dom(optionEl).parentNode;
-	      			var menu=parentOption.querySelector('paper-menu');
-
-	      			if(typeof menu.selectedItems!=='undefined'){
-	      				var input=parentOption.querySelector('paper-input');
-	      				input.value=menu.selectedItems[0].textContent;
-	      			}
-	      			optionEl.toggle();
-      			}
-      		});
-      		var select=parent.querySelector('iron-collapse');
-      		if(select!==null){
-      			console.log(select);
-      			select.toggle();
-      			console.log(parent.querySelector('paper-menu').focusedItem);
-      			parent.querySelector('paper-menu').select(0);
-
-      		}
 
       		var autocomplete=parent.querySelector('datalist');
       		if(autocomplete!==null){
@@ -224,13 +200,13 @@
       		}
 
       },
-   
-      _selectItem:function(ev){
-
-      },
       _hideDropdown:function(el){
       		var parent=Polymer.dom(el.srcElement).parentNode;
       		parent.querySelector('paper-material').style.display='hidden';
+      },
+
+      _reRenderDynamicInput:function(ev){	
+      		Polymer.dom(this.root).querySelector('.input-dynamic paper-input').label=ev.srcElement.dataset['label'];
       }
   	});
 })();
