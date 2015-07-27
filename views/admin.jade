@@ -4,6 +4,11 @@ html
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
+    h3 Search
+    form(action="/candidate", method="GET")
+      h4 Look up candidate by National ID
+      input(type="text", name="serial")
+      input(type="submit", value="Search")
     h3 Links
     ul
       li

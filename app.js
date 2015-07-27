@@ -46,8 +46,8 @@ var app = express();
 app.use(express.static('app'));
 app.use('/bower_components',express.static('bower_components'));
 
-//app.set('views', __dirname + '/views');
-//app.set('view engine', 'jade');
+app.set('views', __dirname + '/views');
+app.set('view engine', 'jade');
 
 app.use(express['static'](__dirname + '/app'));
 app.use(bodyParser.json());
@@ -271,6 +271,10 @@ var fixDates = function(rows) {
   }
   return rows;
 };
+
+app.get('/candidate', function(req, res) {
+  res.redirect('/candidate/' + req.query.serial);
+});
 
 app.get('/candidate/:national_id', function(req, res) {
   var norm_number = myanmarNumbers(req.params.national_id);
