@@ -30,6 +30,7 @@ var isLoggedIn = function(req, res, next) {
     return next();
   }
   res.json({status:'error',error:'not authenticate'});
+  return false;
 };
 
 // Zawgyi converter
@@ -446,23 +447,19 @@ app.get('/activate-form', function(req, res) {
 
 // user authentication sections
 
-
 app.post('/register', function(req, res) {
   userAuth.createUser(req, db, function() {
     res.json({status:'ok'});
   });
 });
 
-app.post('/login', function(req, res, next) {
-  passport.authenticate('local-login', function(err, user, info) {
-    //if (err) { return next(err); }
-    
-    if (!user)  
-      res.json({status:'error',error:info.error}); 
-    else 
-      res.json({status:'ok',user:{id:user.id,email:user.username}); 
 
-  })(req, res, next);
+app.post('/login', passport.authenticate('local-login', { session: true }), function(req, res) {
+  if (!req.user)
+    res.json({status:'error',error:info.error});
+  else
+    res.json({status:'ok',user:req.user});
+
 });
 
 // launch the server process

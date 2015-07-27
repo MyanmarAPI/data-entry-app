@@ -46,13 +46,13 @@
 	<div id="form-container" class="horizontal layout">
 		<div class="col flex-7">
 		<div class="image-wrapper">
-			<img id="form-scanned" src="../form_images/000000-test.png"/>
+			<img id="form-scanned" src="../fax_images/000000-test.png"/>
 		</div>
 		</div>
 		<div class="flex-5 col">Form
 			<form is="iron-form" id="form" method="post" action="/form/handler">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
-					
+
 						<template is="dom-if" if="{{isTypeOf('string',item.type)}}">
 							<div class="input input-text">
 						       <paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
@@ -65,7 +65,7 @@
 						       <paper-input name="[[item.field]]" label="[[item.short_label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
-					    
+
 					    <template is="dom-if" if="{{isTypeOf('select',item.type)}}">
 					    	<div class="input input-select">
 					    		<paper-input name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" on-enter-key="_selectItem"></paper-input>
@@ -87,8 +87,8 @@
 					<paper-button raised>Submit Form</paper-button>
 				</div>
 			</form>
-			
-		</div>	
+
+		</div>
 	</div>
 </template>
 </dom-module>
@@ -139,7 +139,7 @@
       			parent.querySelector('paper-menu').select(0);
 
       		}
-      		
+
       },
       _selectItem:function(ev){
 

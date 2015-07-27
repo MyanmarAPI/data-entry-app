@@ -24,8 +24,15 @@ describe('GET /', function() {
 it('should reject /get-form while logged out', function(done) {
   request(app)
     .get('/get-form')
-    .expect(302)
-    .expect('Location', '/status', done);
+    .expect(200)
+    .end(function(err, res) {
+      if (err) {
+        return done(err);
+      }
+      var jrep = JSON.parse(res.text);
+      assert.equal(jrep.status, 'error');
+      done();
+    });
 });
 
 describe('Registration, login, first entry', function() {
@@ -34,11 +41,18 @@ describe('Registration, login, first entry', function() {
   it('should be able to register', function(done) {
     agent.post('/register')
       .send({
-        username: 'test',
+        email: 'test',
         password: 'test'
       })
-      .expect(302)
-      .expect('Location', '/login?state=newuser', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should reject bad login', function(done) {
@@ -47,8 +61,8 @@ describe('Registration, login, first entry', function() {
         email: 'test',
         password: 'fail'
       })
-      .expect(302)
-      .expect('Location', '/login?state=failed', done);
+      .expect(401)
+      .end(done);
   });
 
   it('should be able to login', function(done) {
@@ -57,8 +71,15 @@ describe('Registration, login, first entry', function() {
         email: 'test',
         password: 'test'
       })
-      .expect(302)
-      .expect('Location', '/type-form', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should have a good /status while logged in', function(done) {
@@ -153,11 +174,18 @@ describe('Second entry offered to second user', function() {
   it('should register second user', function(done) {
     agent.post('/register')
       .send({
-        username: 'test2',
+        email: 'test2',
         password: 'test2'
       })
-      .expect(302)
-      .expect('Location', '/login?state=newuser', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should login second user', function(done) {
@@ -166,8 +194,15 @@ describe('Second entry offered to second user', function() {
         email: 'test2',
         password: 'test2'
       })
-      .expect(302)
-      .expect('Location', '/type-form', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should receive the test image from /get-form', function(done) {
@@ -219,11 +254,18 @@ describe('Issue-solving entry offered to third user', function() {
   it('should register third user', function(done) {
     agent.post('/register')
       .send({
-        username: 'test3',
+        email: 'test3',
         password: 'test3'
       })
-      .expect(302)
-      .expect('Location', '/login?state=newuser', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should login third user', function(done) {
@@ -232,8 +274,15 @@ describe('Issue-solving entry offered to third user', function() {
         email: 'test3',
         password: 'test3'
       })
-      .expect(302)
-      .expect('Location', '/type-form', done);
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
   });
 
   it('should receive the test image from /get-form', function(done) {

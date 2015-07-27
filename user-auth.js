@@ -22,7 +22,6 @@ module.exports = {
   },
 
   setupAuth: function(passport, db) {
-    console.log('using');
     passport.use('local-login', new LocalStrategy({
       usernameField: 'email',
       passwordField: 'password',
