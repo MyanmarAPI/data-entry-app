@@ -30,6 +30,9 @@
 	#form-container{
 		padding: 20px;
 	}
+	#submit-info{
+		bottom:72px;
+	}
 </style>
 <template>
 	<iron-a11y-keys
@@ -61,8 +64,9 @@
 		</div>
 		</div>
 		<div class="flex-5 col">
+		<paper-toast id="submit-info" text="Data submitted, trying to get new form..."></paper-toast>
 		<paper-toast id="form-info" text=""></paper-toast>
-			<form is="iron-form" id="form" method="post" action="/form/handler">
+			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
 				<input type="hidden" name="form_id" value="{{form_id}}">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
 
@@ -162,6 +166,19 @@
       submitForm:function(){
       		this.$$('#form').submit();
       },
+      _handleSubmit:function(ev){
+      		console.log(ev);
+      		if(ev.detail.status==='ok'){
+				Polymer.dom(this.root).querySelectorAll('paper-input').forEach(function(el){
+					el.value='';
+				});
+				Polymer.dom(this.root).querySelectorAll('paper-radio-button').forEach(function(el){
+					el.checked=false;
+				});
+				this.$$('#submit-info').show();
+      			this.$$('#get-form').generateRequest();
+      		}
+      },
       _handleForm:function(ev){
       		if(typeof ev.detail.response.form !=='undefined'){
       			this.form_scanned=ev.detail.response.form.scan_file;
@@ -192,17 +209,12 @@
 	      			ajax.completes.then(function(req){
 	      				var template=autocomplete.querySelector('template');
 	      				template.items=req.response;
-	      				console.log(req.response);
 	      			});
 
 				    ajax.send(params);
       			}
       		}
 
-      },
-      _hideDropdown:function(el){
-      		var parent=Polymer.dom(el.srcElement).parentNode;
-      		parent.querySelector('paper-material').style.display='hidden';
       },
 
       _reRenderDynamicInput:function(ev){	

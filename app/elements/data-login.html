@@ -21,6 +21,12 @@
 	}
 	</style>
 	<template>
+		<iron-a11y-keys
+	      id="enter-key-submit"
+	      keys="enter"
+	      target="[[target]]"
+	      on-keys-pressed="submitForm">
+	    </iron-a11y-keys>
 		<iron-image id="logo" src="../images/mps-logo-no-text.png" preload sizing="contain" class=""></iron-image>
 		<paper-material class="layout center-center" elevation="1">
 			<h1>Login</h1>
@@ -41,6 +47,14 @@
 (function() {
 	Polymer({
 		is:"data-login",
+		properties:{
+			target: {
+		        type: Object,
+		        value: function() {
+		          return this.$$('#login-form');
+		        }
+		      }
+		},
 		submitForm:function(){
 			this.$$('#login-form').submit();
 		},
