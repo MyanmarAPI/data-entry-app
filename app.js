@@ -240,16 +240,23 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
       entry_column = "third_entry_id";
       finishForm(req.body);
     }
-    db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
-      }
+    var respondSubmit = function() {
       if (req.query.format === 'html') {
         res.redirect('/type-form');
       } else {
         res.json({ status: 'ok', entry: entry_id });
       }
-    });
+    };
+    if (req.body.form_id) {
+      db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        respondSubmit();
+      });
+    } else {
+      respondSubmit();
+    }
   });
 });
 
