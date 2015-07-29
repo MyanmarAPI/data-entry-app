@@ -15,5 +15,13 @@
   { "label": "လက်ရှိနေရပ်လိပ်စာ", "field": "address_mail", "type": "string", "length": 150 },
   { "label": "ရွေးကောက်တင်မြှောက်ခံလိုသည့် မဲဆန္ဒနယ်အမည်", "field": "constituency_name", "type": "autocomplete", "length": "50", "source": "constituencies.json","options":[] },
   { "label": "မဲဆန္ဒနယ်အမှတ်", "field": "constituency_number", "type": "number", "length": 3 },
-  { "label": "မိမိကိုယ်စားပြုသောပါတီအဖွဲ့အစည်းအမည် သို့မဟုတ် တစ်သီးပုဂ္ဂလ သို့မဟုတ် သက်ဆိုင်ရာ တိုင်းရင်းသားလူမျိုးအမည်","field": "party", "type": "string-options", "length": 50 }
+  { "label": "မိမိကိုယ်စားပြုသောပါတီအဖွဲ့အစည်းအမည် သို့မဟုတ် တစ်သီးပုဂ္ဂလ သို့မဟုတ် သက်ဆိုင်ရာ တိုင်းရင်းသားလူမျိုးအမည်","field": "party", "type": "string-options", "length": 50 },
+  { "label": "ဖခင် - အဘအမည်", "field": "father", "type": "string", "length": 50 },
+  { "label": "ဖခင် - မှတ်ပုံတင်အမှတ်", "field": "father_id", "type": "string", "length": 50 },
+  { "label": "ဖခင် - လူမျိုး", "field": "father_ethnicity", "type": "string", "length": 50 },
+  { "label": "ဖခင် - ဘာသာ", "field": "father_religion", "type": "string", "length": 50 },
+  { "label": "မိခင် - အမိအမည်", "field": "mother", "type": "string", "length": 50 },
+  { "label": "မိခင် - မှတ်ပုံတင်အမှတ်", "field": "mother_id", "type": "string", "length": 50 },
+  { "label": "မိခင် - လူမျိုး", "field": "mother_ethnicity", "type": "string", "length": 50 },
+  { "label": "မိခင် - ဘာသာ", "field": "mother_religion", "type": "string", "length": 50 }
 ]
