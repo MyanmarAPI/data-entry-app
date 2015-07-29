@@ -94,7 +94,7 @@
 						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
-						       		</template>						   
+						       		</template>
 						       </datalist>
 					      	</div>
 					    </template>
@@ -103,7 +103,7 @@
 							<div class="input input-dynamic">
 										<span class="label">[[item.label]]</span>
 						       			<paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
-	
+
 					      	</div>
 					    </template>
 
@@ -159,7 +159,7 @@
       ready:function(){
       	this.loadForm();
       },
-      
+
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
       },
@@ -217,9 +217,33 @@
 
       },
 
-      _reRenderDynamicInput:function(ev){	
+      _reRenderDynamicInput:function(ev){
       		Polymer.dom(this.root).querySelector('.input-dynamic paper-input').label=ev.srcElement.dataset['label'];
       }
   	});
 })();
+
+function hideConstituencyNumber() {
+	var inputBox = document.getElementsByName("constituency_number")[0].parentElement.parentElement.parentElement.parentElement;
+	var inputField = document.getElementsByName("constituency_number")[0];
+
+	document.getElementsByTagName("paper-radio-button")[1].onclick = function() {
+		inputField.value = "0";
+	  inputBox.style.display = "none";
+	};
+
+
+	document.getElementsByTagName("paper-radio-button")[0].onclick = function() {
+		inputField.value = "";
+		inputBox.style.display = "block";
+	};
+
+	document.getElementsByTagName("paper-radio-button")[2].onclick = function() {
+		inputField.value = "";
+		inputBox.style.display = "block";
+	};
+}
+
+setTimeout(hideConstituencyNumber, 2000);
+
 </script>

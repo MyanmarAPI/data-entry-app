@@ -191,7 +191,7 @@ var findNextForm = function(req, res, format) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }
-    
+
           if (!row) {
             return res.json({ status: 'done' });
             //res.send('No forms for you to digitize! (some may need a second validator)');
@@ -371,7 +371,7 @@ app.get('/entries/:username', function(req, res) {
 });
 
 app.get('/entry/:id', function(req, res) {
-  db.get('SELECT * FROM entries INNER JOIN forms ON form_id WHERE entries.id = ' + req.params.id, function(err, row) {
+  db.get('SELECT * FROM entries WHERE entries.id = ' + req.params.id, function(err, row) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }

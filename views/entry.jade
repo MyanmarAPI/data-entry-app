@@ -4,7 +4,8 @@ html
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
-    img(src=entry.scan_file)
+    if entry.scan_file
+      img(src=entry.scan_file)
     .form
       h4 ကိုယ်စားလှယ်လောင်း၏အမည်
       span= entry.full_name
