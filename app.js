@@ -225,13 +225,8 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   for (var k in form_fields) {
     form_values.push(req.body[form_fields[k]]);
   }
-  form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
-    if (err) {
-      return res.json({ status: 'error', error: err });
-    }
-    // record the entry
-    var entry_id = this.lastID;
+
+  var saveEntry = function(entry_id) {
     var order = req.body.order * 1;
     var entry_column = "first_entry_id";
     if (order === 2) {
@@ -257,7 +252,36 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
     } else {
       respondSubmit();
     }
-  });
+  };
+
+  if (req.body.id) {
+    entry_id = req.body.id * 1;
+    formsets = ['user_id', 'form_id', 'norm_national_id'].concat(form_fields);
+    for(var f = 0; f < formsets.length; f++) {
+      if (form_values[f]) {
+        formsets[f] = formsets[f] + " = '" + form_values[f] + "'";
+      } else {
+        formsets[f] = formsets[f] + " = ''";
+      }
+    }
+    console.log('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id);
+    db.run('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id, function(err) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      saveEntry(entry_id);
+    });
+  } else {
+    form_values = "'" + form_values.join("','") + "'";
+    db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      // record the entry
+      var entry_id = this.lastID;
+      saveEntry(entry_id);
+    });
+  }
 });
 
 // review entries

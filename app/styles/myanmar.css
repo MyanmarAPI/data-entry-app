@@ -12,3 +12,20 @@
 html, body, span, strong {
   font-family: 'Noto Sans Myanmar', sans-serif;
 }
+
+.form form.styled {
+  background: #eee;
+  margin: 30px;
+  padding: 10px;
+}
+
+.form form.styled .field {
+  width: 40%;
+  float: left;
+}
+
+.form form.styled .clearfix {
+  margin: 10px;
+  display: block;
+  clear: both;
+}
