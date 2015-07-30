@@ -110,11 +110,11 @@
 					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}">
 					    	<div class="input input-select">
 					    		<span class="label">[[item.label]]</span>
-					    		<paper-radio-group  id="{{_generateID('input_',item_field)}}" attr-for-selected="value" on-change="_reRenderDynamicInput">
-					    			<template is="dom-repeat" items="[[item.options]]" as="option">
-					    				<paper-radio-button name="[[item.field]]" value="[[option.value]]" data-label$="[[option.label]]">[[option.value]]</paper-radio-button>
-					    			</template>
-								</paper-radio-group>
+					    		<select name="house">
+										<option value="upper">အမျိုးသားလွှတ်တော်</option>
+										<option value="lower">ပြည်သူ့လွှတ်တော်</option>
+										<option value="state">တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်</option>
+									</select>
 							</div>
 					    </template>
 
