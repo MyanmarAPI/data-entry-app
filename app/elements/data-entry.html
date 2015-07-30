@@ -222,28 +222,4 @@
       }
   	});
 })();
-
-function hideConstituencyNumber() {
-	var inputBox = document.getElementsByName("constituency_number")[0].parentElement.parentElement.parentElement.parentElement;
-	var inputField = document.getElementsByName("constituency_number")[0];
-
-	document.getElementsByTagName("paper-radio-button")[1].onclick = function() {
-		inputField.value = "0";
-	  inputBox.style.display = "none";
-	};
-
-
-	document.getElementsByTagName("paper-radio-button")[0].onclick = function() {
-		inputField.value = "";
-		inputBox.style.display = "block";
-	};
-
-	document.getElementsByTagName("paper-radio-button")[2].onclick = function() {
-		inputField.value = "";
-		inputBox.style.display = "block";
-	};
-}
-
-setTimeout(hideConstituencyNumber, 2000);
-
 </script>
