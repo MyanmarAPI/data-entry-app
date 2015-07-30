@@ -121,7 +121,7 @@ var entries_done = function(entry1, entry2) {
     entry1[form_fields[i]] += "";
     entry2[form_fields[i]] += "";
 
-    if (entry1[form_fields[i]].replace(/\s/g, '') === entry2[form_fields[i]].replace(/\s/g, '')) {
+    if (entry1[form_fields[i]].length && entry1[form_fields[i]].replace(/\s/g, '') === entry2[form_fields[i]].replace(/\s/g, '')) {
       matching.push(form_fields[i]);
     } else {
       console.log( form_fields[i] + ": " + entry1[form_fields[i]] + " did not match " + entry2[form_fields[i]]);
