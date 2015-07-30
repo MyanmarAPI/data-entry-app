@@ -264,7 +264,6 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
         formsets[f] = formsets[f] + " = ''";
       }
     }
-    console.log('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id);
     db.run('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id, function(err) {
       if (err) {
         return res.json({ status: 'error', error: err });
