@@ -7,7 +7,7 @@ Simple data entry app for digitizing paper forms
 Node.js and SQLite3
 
 ## Install
-```
+```bash
 cd data-entry-app
 npm install
 npm install -g gulp bower
@@ -23,10 +23,10 @@ We use a SQLite3 database with three tables: users, forms, and entries. A form s
 two entries by different users. If the first and second entries do not match, a third user should
 weigh in on the correct values.
 
-```
+```bash
 cd data-entry-app
-sqlite3 database.sqlite3
-(enter code from setup.sql)
+sqlite3 database.sqlite3 < setup.sql
+sqlite3 test.sqlite3 < setup.sql
 ```
 
 ## Myanmar text
@@ -61,7 +61,7 @@ To set the default font to Google Noto Myanmar on a page, include the /styles/my
 
 /stop-repeat?color_img=path&repeats=id1,id2 = stop new entries on repeat forms; set their color images to this path
 
-```
+```javascript
 {
   "form":{
     "id":3,  // return in form_id field
