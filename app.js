@@ -19,7 +19,7 @@ if (typeof global.it === 'function') {
 var timeago = require("timeago");
 var csv = require("fast-csv");
 
-var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party'];
+var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party', 'mother', 'mother_id', 'father', 'father_id', 'mother_ethnicity', 'father_ethnicity', 'mother_religion', 'father_religion'];
 
 // authentication
 var passport = require("passport");
@@ -121,7 +121,7 @@ var entries_done = function(entry1, entry2) {
     entry1[form_fields[i]] += "";
     entry2[form_fields[i]] += "";
 
-    if (entry1[form_fields[i]].replace(/\s/g, '') === entry2[form_fields[i]].replace(/\s/g, '')) {
+    if (entry1[form_fields[i]].length && entry1[form_fields[i]].replace(/\s/g, '') === entry2[form_fields[i]].replace(/\s/g, '')) {
       matching.push(form_fields[i]);
     } else {
       console.log( form_fields[i] + ": " + entry1[form_fields[i]] + " did not match " + entry2[form_fields[i]]);
@@ -191,7 +191,7 @@ var findNextForm = function(req, res, format) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }
-    
+
           if (!row) {
             return res.json({ status: 'done' });
             //res.send('No forms for you to digitize! (some may need a second validator)');
@@ -225,13 +225,8 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   for (var k in form_fields) {
     form_values.push(req.body[form_fields[k]]);
   }
-  form_values = "'" + form_values.join("','") + "'";
-  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
-    if (err) {
-      return res.json({ status: 'error', error: err });
-    }
-    // record the entry
-    var entry_id = this.lastID;
+
+  var saveEntry = function(entry_id) {
     var order = req.body.order * 1;
     var entry_column = "first_entry_id";
     if (order === 2) {
@@ -257,7 +252,35 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
     } else {
       respondSubmit();
     }
-  });
+  };
+
+  if (req.body.id) {
+    entry_id = req.body.id * 1;
+    formsets = ['user_id', 'form_id', 'norm_national_id'].concat(form_fields);
+    for(var f = 0; f < formsets.length; f++) {
+      if (form_values[f]) {
+        formsets[f] = formsets[f] + " = '" + form_values[f] + "'";
+      } else {
+        formsets[f] = formsets[f] + " = ''";
+      }
+    }
+    db.run('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id, function(err) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      saveEntry(entry_id);
+    });
+  } else {
+    form_values = "'" + form_values.join("','") + "'";
+    db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
+      if (err) {
+        return res.json({ status: 'error', error: err });
+      }
+      // record the entry
+      var entry_id = this.lastID;
+      saveEntry(entry_id);
+    });
+  }
 });
 
 // review entries
@@ -371,7 +394,7 @@ app.get('/entries/:username', function(req, res) {
 });
 
 app.get('/entry/:id', function(req, res) {
-  db.get('SELECT * FROM entries INNER JOIN forms ON form_id WHERE entries.id = ' + req.params.id, function(err, row) {
+  db.get('SELECT * FROM entries WHERE entries.id = ' + req.params.id, function(err, row) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }

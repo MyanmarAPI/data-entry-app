@@ -4,10 +4,13 @@ var sqlite3 = require('sqlite3');
 
 var app = require('../app');
 var db = new sqlite3.Database('./test.sqlite3');
+var form = require('../app/form.json');
+var ignore_fields = ["age"];
+
 var form_id;
 
 describe('GET /', function() {
-  it('should return homepage', function(done) {
+  it('returns homepage', function(done) {
     request(app)
       .get('/')
       .expect(200)
@@ -21,7 +24,7 @@ describe('GET /', function() {
   });
 });
 
-it('should reject /get-form while logged out', function(done) {
+it('rejects /get-form while logged out', function(done) {
   request(app)
     .get('/get-form')
     .expect(200)
@@ -38,7 +41,7 @@ it('should reject /get-form while logged out', function(done) {
 describe('Registration, login, first entry', function() {
   var agent = request.agent(app);
 
-  it('should be able to register', function(done) {
+  it('registers first user', function(done) {
     agent.post('/register')
       .send({
         email: 'test',
@@ -55,7 +58,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should reject bad login', function(done) {
+  it('rejects bad login', function(done) {
     agent.post('/login')
       .send({
         email: 'test',
@@ -65,7 +68,7 @@ describe('Registration, login, first entry', function() {
       .end(done);
   });
 
-  it('should be able to login', function(done) {
+  it('logs in first user', function(done) {
     agent.post('/login')
       .send({
         email: 'test',
@@ -82,7 +85,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should have a good /status while logged in', function(done) {
+  it('has a good /status while logged in', function(done) {
     agent.get('/status')
       .expect(200)
       .end(function(err, res) {
@@ -96,7 +99,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should get status: done when there are no forms', function(done) {
+  it('has status: done when there are no forms', function(done) {
     agent.get('/get-form')
       .expect(200)
       .end(function(err, res) {
@@ -109,7 +112,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should add a form from the test image', function(done) {
+  it('adds a form from the test image', function(done) {
     agent.get('/data-update')
       .expect(200)
       .end(function(err, res) {
@@ -117,7 +120,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should receive the new test image from /get-form', function(done) {
+  it('receives the new test image from /get-form', function(done) {
     agent.get('/get-form')
       .expect(200)
       .end(function(err, res) {
@@ -133,7 +136,7 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should get a success response from posting the form', function(done) {
+  it('gets a success response from posting the form', function(done) {
     agent.post('/submit-form')
       .send({
         form_id: form_id,
@@ -153,14 +156,13 @@ describe('Registration, login, first entry', function() {
       });
   });
 
-  it('should get status: done after the user has an entry on the only form', function(done) {
+  it('gets status: done after the user has an entry on the only form', function(done) {
     agent.get('/get-form')
       .expect(200)
       .end(function(err, res) {
         if (err) {
           return done(err);
         }
-        console.log(res.text);
         var jrep = JSON.parse(res.text);
         assert.equal(jrep.status, 'done');
         done();
@@ -171,7 +173,7 @@ describe('Registration, login, first entry', function() {
 describe('Second entry offered to second user', function() {
   var agent = request.agent(app);
 
-  it('should register second user', function(done) {
+  it('registers second user', function(done) {
     agent.post('/register')
       .send({
         email: 'test2',
@@ -188,7 +190,7 @@ describe('Second entry offered to second user', function() {
       });
   });
 
-  it('should login second user', function(done) {
+  it('logs in second user', function(done) {
     agent.post('/login')
       .send({
         email: 'test2',
@@ -205,14 +207,13 @@ describe('Second entry offered to second user', function() {
       });
   });
 
-  it('should receive the test image from /get-form', function(done) {
+  it('receives the test image from /get-form', function(done) {
     agent.get('/get-form')
       .expect(200)
       .end(function(err, res) {
         if (err) {
           return done(err);
         }
-        console.log(res.text);
         var jrep = JSON.parse(res.text);
         assert.equal(jrep.form.id, form_id);
         assert.include(jrep.form.scan_file, '/fax_images/');
@@ -222,7 +223,7 @@ describe('Second entry offered to second user', function() {
       });
   });
 
-  it('should get a success response from posting the form', function(done) {
+  it('gets a success response from posting the form', function(done) {
     agent.post('/submit-form')
       .send({
         form_id: form_id,
@@ -241,7 +242,7 @@ describe('Second entry offered to second user', function() {
       });
   });
 
-  it('should get redirect (ultimately to status: done) after the user has an entry on the only form', function(done) {
+  it('gets redirect (ultimately to status: done) after the user has an entry on the only form', function(done) {
     agent.get('/get-form')
       .expect(302)
       .expect('Location', '/get-form?third=true', done);
@@ -251,7 +252,7 @@ describe('Second entry offered to second user', function() {
 describe('Issue-solving entry offered to third user', function() {
   var agent = request.agent(app);
 
-  it('should register third user', function(done) {
+  it('registers third user', function(done) {
     agent.post('/register')
       .send({
         email: 'test3',
@@ -268,7 +269,7 @@ describe('Issue-solving entry offered to third user', function() {
       });
   });
 
-  it('should login third user', function(done) {
+  it('logs in third user', function(done) {
     agent.post('/login')
       .send({
         email: 'test3',
@@ -285,7 +286,7 @@ describe('Issue-solving entry offered to third user', function() {
       });
   });
 
-  it('should receive the test image from /get-form', function(done) {
+  it('receives the test image and matching fields array from /get-form', function(done) {
     agent.get('/get-form')
       .expect(200)
       .end(function(err, res) {
@@ -304,6 +305,98 @@ describe('Issue-solving entry offered to third user', function() {
 });
 
 describe('cleanup', function() {
+  it('cleans up test database', function(done) {
+    db.run('DELETE FROM forms', function(err) {
+      if (err) {
+        return done(err);
+      }
+      db.run('DELETE FROM entries', function(err) {
+        if (err) {
+          return done(err);
+        }
+        db.run('DELETE FROM users', function(err) {
+          return done(err);
+        });
+      });
+    });
+  });
+});
+
+describe('data entry without form', function() {
+  var agent = request.agent(app);
+
+  it('registers user', function(done) {
+    agent.post('/register')
+      .send({
+        email: 'test',
+        password: 'test'
+      })
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
+  });
+
+  it('logs in user', function(done) {
+    agent.post('/login')
+      .send({
+        email: 'test',
+        password: 'test'
+      })
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        done();
+      });
+  });
+
+  it('posts entry without form_id', function(done) {
+    var form_fields = { order: 1 };
+    for (var f = 0; f < form.length; f++) {
+      form_fields[form[f].field] = f + "";
+    }
+    agent.post('/submit-form')
+      .send(form_fields)
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var jrep = JSON.parse(res.text);
+        assert.equal(jrep.status, 'ok');
+        entry_id = jrep.entry;
+        done();
+      });
+  });
+
+  it('remembers all form field values', function(done) {
+    agent.get('/entry/' + entry_id)
+      .expect(200)
+      .end(function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        for (var f = 0; f < form.length; f++) {
+          if (ignore_fields.indexOf(form[f].field) === -1) {
+            assert.include(res.text, form[f].field);
+            assert.include(res.text, 'value="' + f + '"');
+          }
+        }
+        done();
+      });
+  });
+});
+
+describe('cleanup2', function() {
   it('cleans up test database', function(done) {
     db.run('DELETE FROM forms', function(err) {
       if (err) {

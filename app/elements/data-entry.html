@@ -94,7 +94,7 @@
 						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
-						       		</template>						   
+						       		</template>
 						       </datalist>
 					      	</div>
 					    </template>
@@ -103,18 +103,18 @@
 							<div class="input input-dynamic">
 										<span class="label">[[item.label]]</span>
 						       			<paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
-	
+
 					      	</div>
 					    </template>
 
 					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}">
 					    	<div class="input input-select">
 					    		<span class="label">[[item.label]]</span>
-					    		<paper-radio-group  id="{{_generateID('input_',item_field)}}" attr-for-selected="value" on-change="_reRenderDynamicInput">
-					    			<template is="dom-repeat" items="[[item.options]]" as="option">
-					    				<paper-radio-button name="[[item.field]]" value="[[option.value]]" data-label$="[[option.label]]">[[option.value]]</paper-radio-button>
-					    			</template>
-								</paper-radio-group>
+					    		<select name="house">
+										<option value="upper">အမျိုးသားလွှတ်တော်</option>
+										<option value="lower">ပြည်သူ့လွှတ်တော်</option>
+										<option value="state">တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်</option>
+									</select>
 							</div>
 					    </template>
 
@@ -159,7 +159,7 @@
       ready:function(){
       	this.loadForm();
       },
-      
+
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
       },
@@ -217,7 +217,7 @@
 
       },
 
-      _reRenderDynamicInput:function(ev){	
+      _reRenderDynamicInput:function(ev){
       		Polymer.dom(this.root).querySelector('.input-dynamic paper-input').label=ev.srcElement.dataset['label'];
       }
   	});

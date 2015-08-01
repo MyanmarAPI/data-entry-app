@@ -4,7 +4,8 @@ html
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
-    img(src=entry.scan_file)
+    if entry.scan_file
+      img(src=entry.scan_file)
     .form
       h4 ကိုယ်စားလှယ်လောင်း၏အမည်
       span= entry.full_name
@@ -14,8 +15,11 @@ html
       span= entry.norm_national_id
       span )
 
-      for key in Object.keys(entry)
-        strong= key
-        br
-        span= entry[key]
-        br
+      form.styled(action="/submit-form", method="POST")
+        for key in Object.keys(entry)
+          .field
+            strong= key
+            br
+            input(name=key, value=entry[key])
+            br
+        input.clearfix(type="submit", value="Save Changes")

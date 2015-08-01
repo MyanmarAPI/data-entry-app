@@ -26,6 +26,14 @@ CREATE TABLE "entries" (
     "constituency_name" TEXT,
     "constituency_number" INTEGER,
     "party" TEXT,
+    "mother" TEXT,
+    "mother_id" TEXT,
+    "mother_religion" TEXT,
+    "mother_ethnicity" TEXT,
+    "father" TEXT,
+    "father_id" TEXT,
+    "father_religion" TEXT,
+    "father_ethnicity" TEXT,
     "saved" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
