@@ -137,7 +137,7 @@
       	form_id:Number,
       	form_scanned:{
       		type:String,
-      		value:'../images/mps-logo-no-text.png'
+      		value:'../images/blank-form.png'
       	},
       	target: {
 	        type: Object,
@@ -189,7 +189,7 @@
 		  	}
 		  	else if(ev.detail.response.status==='done'){
 		  		var forminfo=this.$$('#form-info');
-		  		forminfo.text="All image already process please try again later!";
+		  		forminfo.text="No image to entry!";
 		  		forminfo.show();
 		  	}
       },
