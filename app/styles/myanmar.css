@@ -29,3 +29,23 @@ html, body, span, strong {
   display: block;
   clear: both;
 }
+
+#comparer {
+  text-align: center;
+  border: 1px solid #000;
+  box-shadow: 2px 2px #ccc;
+  padding: 20px;
+}
+
+#comparer label, #comparer button, #comparer textarea {
+  font-size: 20pt;
+  min-height: 24pt;
+  vertical-align: middle;
+}
+
+#comparer button {
+  padding: 6px;
+  margin: 12px;
+  background: #303f9f;
+  color: #fff;
+}
