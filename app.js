@@ -97,7 +97,7 @@ app.get('/errors', isLoggedIn, function (req, res) {
   });
 });
 
-app.post('/errors/:entry_id', isLoggedIn, function (req, res) {
+app.post('/errors/:entry_id/:entry2_id', isLoggedIn, function (req, res) {
   db.get('SELECT * FROM entries WHERE id = ?', req.params.entry_id, function (err, row) {
     if (err) {
       throw err;
@@ -130,6 +130,10 @@ app.post('/errors/:entry_id', isLoggedIn, function (req, res) {
       if (err) {
         throw err;
       }
+
+      db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry_id);
+      db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry2_id);
+
       return res.json({});
     });
   });

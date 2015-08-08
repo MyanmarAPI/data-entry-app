@@ -130,7 +130,7 @@ function queryMatch() {
     // when you reach the end of conflicts on this form
     // post and get a new form
     var msg = { unknowns: unknowns, set_fields: set_fields };
-    $.post("/errors/" + matches[0].id, msg, function(data) {
+    $.post("/errors/" + matches[0].id + "/" + matches[1].id, msg, function(data) {
       window.location.reload();
     });
   }
