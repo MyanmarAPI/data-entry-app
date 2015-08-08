@@ -63,6 +63,18 @@ app.use(passport.session());
 var serverStatus = require('./server-status');
 app.get('/status', serverStatus.status);
 
+// name output
+app.get('/names', function (req, res) {
+  db.all('SELECT full_name, national_id FROM entries', function(err, rows) {
+    rows = rows.map(function(row) {
+      return row.full_name + " (" + row.national_id + ")";
+    });
+    res.render('names', {
+      namelist: rows
+    });
+  });
+});
+
 // type form sections
 var renderForm = function(res, row, order, matching) {
   if ((typeof matching == 'undefined') || !matching) {
