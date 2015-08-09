@@ -4,16 +4,25 @@ html
     meta(charset="utf-8")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
-    #comparer
-      label
+    .about
+      span အဖြေတုံ့ပြန်ချက်နှစ်ခုကို တိုက်စစ်ကြည့်ပါ။ မတူညီပါက အဖြေမှန်ကိုရွေးချယ်ပြီး system မှထွက်ပါ။
       br
-      for match in matches
-        button
+      span အဖြေတုံ့ပြန်ချက်နှစ်ခုလုံး မမှန်ကန်ပါက အဖြေမှန်ကို မိမိကိုယ်တိုင် ရိုက်ထည့်ပြီး “Save Changes” ကိုနှိပ်ပါ။
       br
-      textarea
-      button#correct Save
+      span မည်သည့်အဖြေ မှန်သည်ကို မဆုံးဖြတ်နိုင်ပါက original form နှင့်နောက်မှ တိုက်စစ်မည် ဖြစ် သည်။
       br
-      button#skip Don't Know
+      span “Skip” ကိုနှိပ်ပြီးထွက်ပါ။
+
+      #comparer
+        label
+        br
+        for match in matches
+          button
+        br
+        textarea
+        button#correct Save Changes
+        br
+        button#skip Skip
 
     script(type="text/javascript") var matches = !{JSON.stringify(matches)};
     script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")

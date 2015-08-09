@@ -30,8 +30,12 @@ html, body, span, strong {
   clear: both;
 }
 
+.about {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
 #comparer {
-  text-align: center;
   border: 1px solid #000;
   box-shadow: 2px 2px #ccc;
   padding: 20px;
@@ -48,4 +52,9 @@ html, body, span, strong {
   margin: 12px;
   background: #303f9f;
   color: #fff;
+  display: block;
+}
+
+button#correct {
+  display: inline;
 }

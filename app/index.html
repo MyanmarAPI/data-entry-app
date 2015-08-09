@@ -59,13 +59,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <span id="browser-sync-binding"></span>
   <template is="dom-bind" id="app">
 
-    
+
           <iron-pages id="route" attr-for-selected="data-route" selected="{{route}}">
             <section data-route="home">
                 <paper-header-panel mode="cover">
                     <div class="paper-header layout horizontal">
-                          <h1 id="entry-title" class="flex"><img src="../images/mps-logo-no-text.png"></iron-image>Data Entry App</h1>  
-                          <span class="flex self-end">Logged In As<span>{{app.user}}</span></span>
+                          <h1 id="entry-title" class="flex"><img src="../images/mps-logo-no-text.png"></iron-image>Data Entry App</h1>
+                          <a href="#" onclick="window.location='/errors';">Error Checking</a>
                     </div>
                     <div class="content cover">
                         <data-entry></data-entry>
@@ -83,7 +83,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </div>
             </section>
           </iron-pages>
-      
+
 
     <!-- Uncomment next block to enable Service Worker support (1/2) -->
     <!--
