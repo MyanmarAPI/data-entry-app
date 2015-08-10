@@ -67,31 +67,37 @@
 		<paper-toast id="submit-info" text="Data submitted, trying to get new form..."></paper-toast>
 		<paper-toast id="form-info" text=""></paper-toast>
 			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
+				<input type="hidden" name="id" value="{{id}}">
 				<input type="hidden" name="form_id" value="{{form_id}}">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
 
-						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}">
+						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}" restamp="true">
 							<div class="input input-text">
-						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+						       <paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{_isTypeOf('number',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('number',item.type)}}" restamp="true">
 							<div class="input input-number">
-						       <paper-input id="{{_generateID('input_',item_field)}}" type="number" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+						       <paper-input id$="{{_generateID('input_',item_field)}}" type="number" name$="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{_isTypeOf('date',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('date',item.type)}}" restamp="true">
 							<div class="input input-date">
-						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" type="date" always-float-label label="[[item.label]]" on-focus="_focusHandler" required="true" min="[[item.min]]" max="[[item.max]]"></paper-input>
+						       <paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" type="date" always-float-label label="[[item.label]]" on-focus="_focusHandler" required="true" min="[[item.min]]" max="[[item.max]]"></paper-input>
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{_isTypeOf('autocomplete',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('autocomplete',item.type)}}" restamp="true">
 							<div class="input input-autocomplete">
-						       <paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" type="text" label="[[item.label]]" on-focus="_focusHandler" required="true" list$="{{_generateID('list_',item.field)}}"></paper-input>
-						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]">
+								<template is="dom-if" if="{{!_isDynamicAutoComplete(item.minchar)}}" restamp="true">
+						       		<paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" type="text" label="[[item.label]]" on-focus="_focusHandler" required="true" list$="{{_generateID('list_',item.field)}}"></paper-input>
+						       	</template>
+						       	<template is="dom-if" if="{{_isDynamicAutoComplete(item.minchar)}}" restamp="true">
+						       		<paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" type="text" label="[[item.label]]" on-input="_getList" required="true" list$="{{_generateID('list_',item.field)}}"></paper-input>
+						       	</template>
+						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]" data-minchar$="[[item.minchar]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
 						       		</template>						   
@@ -99,23 +105,23 @@
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{_isTypeOf('string-options',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('string-options',item.type)}}" restamp="true">
 							<div class="input input-dynamic">
 										<span class="label">[[item.label]]</span>
-						       			<paper-input id="{{_generateID('input_',item_field)}}" name="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
+						       			<paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
 	
 					      	</div>
 					    </template>
 
-					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}">
+					    <template is="dom-if" if="{{_isTypeOf('select',item.type)}}" restamp="true">
 					    	<div class="input input-select">
 					    		<span class="label">[[item.label]]</span>
-					    		<paper-radio-group name="[[item.field]]" id="{{_generateID('input_',item_field)}}" attr-for-selected="value" on-change="_reRenderDynamicInput">
+					    		<paper-radio-group name$="[[item.field]]" id$="{{_generateID('input_',item_field)}}" attr-for-selected="value" on-change="_reRenderDynamicInput">
 					    			<template is="dom-repeat" items="[[item.options]]" as="option">
-					    				<paper-radio-button name="[[item.field]]" value="[[option.value]]" data-label$="[[option.label]]">[[option.value]]</paper-radio-button>
+					    				<paper-radio-button name$="[[item.field]]" value="[[option.value]]" data-label$="[[option.label]]">[[option.value]]</paper-radio-button>
 					    			</template>
 								</paper-radio-group>
-								<input type="hidden" name="[[item.field]]" value="">
+								<input type="hidden" name$="[[item.field]]" value="">
 							</div>
 					    </template>
 
@@ -147,6 +153,7 @@
 	        }
 	      }
       },
+      candidates:[],
    	  _generateID:function(prefix,field){
    	  		return prefix+field;
    	  },
@@ -170,12 +177,13 @@
       _handleSubmit:function(ev){
       		console.log(ev);
       		if(ev.detail.status==='ok'){
-				Polymer.dom(this.root).querySelectorAll('paper-input').forEach(function(el){
+				Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
 					el.value='';
 				});
 				Polymer.dom(this.root).querySelectorAll('paper-radio-button').forEach(function(el){
 					el.checked=false;
 				});
+				this.candidates=[];
 				this.$$('#submit-info').show();
       			this.$$('#get-form').generateRequest();
       		}
@@ -215,13 +223,67 @@
 				    ajax.send(params);
       			}
       		}
-
       },
+      _getList:function(el){
+      		var dataentry=this;
+      		var parent=Polymer.dom(el.srcElement).parentNode.parentNode.parentNode;
+      		var autocomplete=parent.querySelector('datalist');
+      		var options=autocomplete.querySelectorAll('option');
 
+      		if(autocomplete!==null && options.length===0 && el.srcElement.value.length>=autocomplete.dataset['minchar']){
+      				var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
+      				var params={
+					        url: autocomplete.dataset['source']+'/'+el.srcElement.value+'?format=json',
+					        method: 'get',
+					        handleAs:'json'
+					      }
+	      			ajax.completes.then(function(req){
+	      				var optionlist=[];
+	      				req.response.forEach(function(el){
+	      					dataentry.candidates[el.national_id]=el;
+	      					optionlist.push(el.national_id);
+	      				});
+	      				var template=autocomplete.querySelector('template');
+	      				template.items=optionlist;
+	      				console.log(dataentry.candidates);
+	      			});
+
+				    ajax.send(params);
+      		}
+      		else if(options.length>0 && el.srcElement.value.length<autocomplete.dataset['minchar']){
+      			for (var i = 0; i < options.length; ++i){
+      				options[i].remove();
+      			}
+      			dataentry.candidates=[];
+      		}
+
+      		
+
+      		if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
+      			var candidate=dataentry.candidates[el.srcElement.value];
+      			Polymer.dom(this.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
+      				
+      				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
+      					if(input.tagName==='PAPER-RADIO-GROUP'){
+      						input.select(candidate[input.getAttribute('name')]);
+      					}
+      					else
+      						input.value=candidate[input.getAttribute('name')];
+      				}
+      			});
+           			
+      		}
+      },
       _reRenderDynamicInput:function(ev){	
       		var input=Polymer.dom(ev.srcElement).parentNode.parentNode.querySelector('input');
       		input.value=ev.srcElement.value;
       		Polymer.dom(this.root).querySelector('.input-dynamic paper-input').label=ev.srcElement.dataset['label'];
+      },
+      _isDynamicAutoComplete(charlength){
+      		if(charlength>0)
+      			return true;
+      		else
+      			return false;
       }
   	});
 })();

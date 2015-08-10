@@ -2,7 +2,7 @@
   { "label": "လွှတ်တော်အမျိုးအစား", "field": "house", "type": "select", "options": [{"value":"အမျိုးသားလွှတ်တော်","label":"ပါတီ"},{"value":"ပြည်သူ့လွှတ်တော်","label":"တစ်ဦးချင်း"},{"value":"တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော် ","label":"တိုင်းရင်းသား"}
   ] },
   { "label": "ကိုယ်စားလှယ်လောင်း၏အမည်", "field": "full_name", "type": "string", "length": 50 },
-  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "string", "length": 50 },
+  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "autocomplete", "source":"candidate","minchar":3, "length": 50 },
   { "label": "ရပ်ကွက်/ကျေးရွာအုပ်စု အမည်", "field":"ward_village", "type": "autocomplete", "length": 50, "source": "wards.json" },
   { "label": "မဲစာရင်းအမှတ်စဉ်", "field": "voter_list_number", "type": "number", "length": 3 },
   { "label": "မွေးသက္ကရာဇ်", "field": "dob", "type": "date", "length": 50, "min":"1900-01-01", "max":"1990-12-31" },
@@ -13,7 +13,7 @@
   { "label": "အလုပ်အကိုင်", "field": "occupation", "type": "string", "length": 50 },
   { "label": "အမြဲတမ်းနေရပ်လိပ်စာ", "field": "address_perm", "type": "string", "length": 150 },
   { "label": "လက်ရှိနေရပ်လိပ်စာ", "field": "address_mail", "type": "string", "length": 150 },
-  { "label": "ရွေးကောက်တင်မြှောက်ခံလိုသည့် မဲဆန္ဒနယ်အမည်", "field": "constituency_name", "type": "autocomplete", "length": "50", "source": "constituencies.json","options":[] },
+  { "label": "ရွေးကောက်တင်မြှောက်ခံလိုသည့် မဲဆန္ဒနယ်အမည်", "field": "constituency_name", "type": "autocomplete", "length": "50", "source": "constituencies.json","minchar":0,"options":[] },
   { "label": "မဲဆန္ဒနယ်အမှတ်", "field": "constituency_number", "type": "number", "length": 3 },
   { "label": "မိမိကိုယ်စားပြုသောပါတီအဖွဲ့အစည်းအမည် သို့မဟုတ် တစ်သီးပုဂ္ဂလ သို့မဟုတ် သက်ဆိုင်ရာ တိုင်းရင်းသားလူမျိုးအမည်","field": "party", "type": "string-options", "length": 50 },
   { "label": "ဖခင် - အဘအမည်", "field": "father", "type": "string", "length": 50 },

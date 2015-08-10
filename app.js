@@ -306,6 +306,35 @@ app.get('/candidate', function(req, res) {
   res.redirect('/candidate/' + req.query.serial);
 });
 
+app.get('/suggestcandidate/:national_id', function(req, res) {
+  var norm_number = myanmarNumbers(req.params.national_id);
+  var respondCandidates = function(rows) {
+      var list=[];
+      rows.forEach(function(row){
+          list.push(row.national_id);
+      });
+      res.json({ status: 'ok', data: list });
+  };
+  
+  db.all("SELECT national_id FROM entries WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    if (!rows.length) {
+      // try with serial number
+      db.all("SELECT serial FROM entries WHERE serial LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        respondCandidates(rows);
+      });
+    } else {
+      // candidates match national id
+      respondCandidates(rows);
+    }
+  });
+});
+
 app.get('/candidate/:national_id', function(req, res) {
   var norm_number = myanmarNumbers(req.params.national_id);
   var respondCandidates = function(rows) {
@@ -318,13 +347,13 @@ app.get('/candidate/:national_id', function(req, res) {
       });
     }
   };
-  db.all("SELECT * FROM entries WHERE norm_national_id = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+  db.all("SELECT * FROM entries WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
       // try with serial number
-      db.all("SELECT * FROM entries WHERE serial = '" + norm_number + "' ORDER BY saved DESC", function(err, rows) {
+      db.all("SELECT * FROM entries WHERE serial LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
