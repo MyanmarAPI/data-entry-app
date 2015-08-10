@@ -1,0 +1,9 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    ul#namelist
+    script(type="text/javascript") var names = !{JSON.stringify(namelist)};
+    script(type="text/javascript", src="/scripts/namesort.js")

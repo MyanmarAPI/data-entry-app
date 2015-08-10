@@ -63,6 +63,82 @@ app.use(passport.session());
 var serverStatus = require('./server-status');
 app.get('/status', serverStatus.status);
 
+// name output
+app.get('/names', function (req, res) {
+  db.all('SELECT full_name, national_id FROM consensus_forms', function(err, rows) {
+    rows = rows.map(function(row) {
+      return row.full_name + " (" + row.national_id + ")";
+    });
+    res.render('names', {
+      namelist: rows
+    });
+  });
+});
+
+// error fixer - data should be relatively complete
+app.get('/errors', isLoggedIn, function (req, res) {
+  db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL ORDER BY RANDOM() LIMIT 1', function(err, row) {
+    if (err) {
+      throw err;
+    }
+    var national_id = row.norm_national_id.replace(/\s/g, '').replace("နိုင်", "XOX");
+    db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), ' ', '') = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
+      if (err) {
+        throw err;
+      }
+      if (matches.length < 2) {
+        // console.log('no match');
+        return res.redirect('/errors');
+      }
+      res.render('errorcheck', {
+        matches: matches
+      });
+    });
+  });
+});
+
+app.post('/errors/:entry_id/:entry2_id', isLoggedIn, function (req, res) {
+  db.get('SELECT * FROM entries WHERE id = ?', req.params.entry_id, function (err, row) {
+    if (err) {
+      throw err;
+    }
+    if (!row) {
+      return res.json({});
+    }
+
+    var fields = ['user_id', 'unknowns'];
+    var vals = [req.user.id, (req.body.unknowns || []).join(",")];
+
+    for (var r in row) {
+      if (['id', 'saved', 'user_id', 'mother_name', 'finalized'].indexOf(r) === -1) {
+        fields.push(r);
+        vals.push(row[r]);
+      }
+    }
+
+    // modify initial entry to match what the user said
+    var set_fields = (req.body.set_fields || []);
+    for (var i = 0; i < set_fields.length; i++) {
+      var set_key = set_fields[i].key;
+      var set_val = set_fields[i].selection;
+      vals[ fields.indexOf(set_key) ] = set_val;
+    }
+
+    //console.log("INSERT INTO consensus_forms (" + fields.join(',') + ") VALUES ('" + vals.join("','") + "')");
+
+    db.run("INSERT INTO consensus_forms (" + fields.join(',') + ") VALUES ('" + vals.join("','") + "')", function(err) {
+      if (err) {
+        throw err;
+      }
+
+      db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry_id);
+      db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry2_id);
+
+      return res.json({});
+    });
+  });
+});
+
 // type form sections
 var renderForm = function(res, row, order, matching) {
   if ((typeof matching == 'undefined') || !matching) {
@@ -285,11 +361,11 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
 
 // review entries
 app.get("/admin", function(req, res) {
-  db.get("SELECT COUNT(*) AS total FROM forms", function(err, r1) {
-    db.get("SELECT COUNT(*) AS finished FROM forms WHERE entries_done", function(err, r2) {
+  db.get("SELECT COUNT(*) AS total FROM entries", function(err, r1) {
+    db.get("SELECT COUNT(*) AS total FROM consensus_forms", function(err, r2) {
       res.render('admin', {
-        total: r1.total,
-        finished: r2.finished
+        entries: r1.total,
+        consensus_forms: r2.total
       });
     });
   });

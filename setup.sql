@@ -34,6 +34,7 @@ CREATE TABLE "entries" (
     "father_id" TEXT,
     "father_religion" TEXT,
     "father_ethnicity" TEXT,
+    "finalized" INTEGER,
     "saved" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -47,4 +48,37 @@ CREATE TABLE "forms" (
     "second_entry_id" INTEGER,
     "third_entry_id" INTEGER,
     "entries_done" BOOLEAN DEFAULT 0
+);
+
+CREATE TABLE "consensus_forms" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "form_id" INTEGER,
+    "user_id" INTEGER,
+    "house" TEXT,
+    "serial" TEXT,
+    "full_name" TEXT,
+    "national_id" TEXT,
+    "norm_national_id" TEXT,
+    "ward_village" TEXT,
+    "voter_list_number" TEXT,
+    "dob" TEXT,
+    "nationality" TEXT,
+    "religion" TEXT,
+    "education" TEXT,
+    "occupation" TEXT,
+    "address_perm" TEXT,
+    "address_mail" TEXT,
+    "constituency_name" TEXT,
+    "constituency_number" INTEGER,
+    "party" TEXT,
+    "mother" TEXT,
+    "mother_id" TEXT,
+    "mother_religion" TEXT,
+    "mother_ethnicity" TEXT,
+    "father" TEXT,
+    "father_id" TEXT,
+    "father_religion" TEXT,
+    "father_ethnicity" TEXT,
+    "unknowns" TEXT,
+    "saved" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
