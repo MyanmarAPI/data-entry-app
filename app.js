@@ -81,8 +81,8 @@ app.get('/errors', isLoggedIn, function (req, res) {
     if (err) {
       throw err;
     }
-    var national_id = row.norm_national_id;
-    db.all('SELECT * FROM entries WHERE norm_national_id = ?', national_id, function(err, matches) {
+    var national_id = row.norm_national_id.replace(/\s/g, '').replace("နိုင်", "XOX");
+    db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), ' ', '') = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
       if (err) {
         throw err;
       }

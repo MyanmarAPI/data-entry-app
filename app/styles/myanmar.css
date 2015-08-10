@@ -55,6 +55,18 @@ html, body, span, strong {
   display: block;
 }
 
+button#correct, button#skip {
+  background: #484;
+}
+
+button#back {
+  background: #444;
+}
+
 button#correct {
   display: inline;
+}
+
+button#skip {
+  float: right;
 }
