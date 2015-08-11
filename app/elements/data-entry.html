@@ -100,7 +100,7 @@
 						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]" data-minchar$="[[item.minchar]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
-						       		</template>						   
+						       		</template>
 						       </datalist>
 					      	</div>
 					    </template>
@@ -109,7 +109,7 @@
 							<div class="input input-dynamic">
 										<span class="label">[[item.label]]</span>
 						       			<paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" label="[[item.label]]" on-focus="_focusHandler" required="true"></paper-input>
-	
+
 					      	</div>
 					    </template>
 
@@ -167,7 +167,7 @@
       ready:function(){
       	this.loadForm();
       },
-      
+
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
       },
@@ -256,12 +256,12 @@
       			dataentry.candidates=[];
       		}
 
-      		
+
 
       		if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
       			var candidate=dataentry.candidates[el.srcElement.value];
       			Polymer.dom(this.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
-      				
+
       				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
       					if(input.tagName==='PAPER-RADIO-GROUP'){
       						input.select(candidate[input.getAttribute('name')]);
@@ -273,10 +273,10 @@
       					}
       				}
       			});
-           			
+
       		}
       },
-      _reRenderDynamicInput:function(ev){	
+      _reRenderDynamicInput:function(ev){
       		var input=Polymer.dom(ev.srcElement).parentNode.parentNode.querySelector('input');
       		input.value=ev.srcElement.value;
       		Polymer.dom(this.root).querySelector('.input-dynamic paper-input').label=ev.srcElement.dataset['label'];
@@ -289,4 +289,10 @@
       }
   	});
 })();
+
+setTimeout(function() {
+	document.getElementsByTagName("input")[2].parentElement.parentElement.style.border = "1px solid #000";
+	document.getElementsByTagName("input")[2].parentElement.parentElement.style.padding = "10px";
+		document.getElementsByTagName("input")[2].parentElement.parentElement.style.marginBottom = "10px";
+}, 750);
 </script>

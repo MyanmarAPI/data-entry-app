@@ -1,8 +1,8 @@
 [
+  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "autocomplete", "source":"candidate","minchar":3, "length": 50 },
   { "label": "လွှတ်တော်အမျိုးအစား", "field": "house", "type": "select", "options": [{"value":"အမျိုးသားလွှတ်တော်","label":"ပါတီ"},{"value":"ပြည်သူ့လွှတ်တော်","label":"တစ်ဦးချင်း"},{"value":"တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော် ","label":"တိုင်းရင်းသား"}
   ] },
   { "label": "ကိုယ်စားလှယ်လောင်း၏အမည်", "field": "full_name", "type": "string", "length": 50 },
-  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "autocomplete", "source":"candidate","minchar":3, "length": 50 },
   { "label": "ရပ်ကွက်/ကျေးရွာအုပ်စု အမည်", "field":"ward_village", "type": "autocomplete", "length": 50, "source": "wards.json" },
   { "label": "မဲစာရင်းအမှတ်စဉ်", "field": "voter_list_number", "type": "number", "length": 3 },
   { "label": "မွေးသက္ကရာဇ်", "field": "dob", "type": "date", "length": 50, "min":"1900-01-01", "max":"1990-12-31" },
