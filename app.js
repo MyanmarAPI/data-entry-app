@@ -412,7 +412,8 @@ app.get('/suggestcandidate/:national_id', function(req, res) {
 });
 
 app.get('/candidate/:national_id', function(req, res) {
-  var norm_number = myanmarNumbers(req.params.national_id);
+  var national_id=req.params.national_id.replace('-','/');
+  var norm_number = myanmarNumbers(national_id);
   var respondCandidates = function(rows) {
     if (req.query.format === 'json') {
       res.json(rows);

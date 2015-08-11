@@ -229,13 +229,13 @@
       		var parent=Polymer.dom(el.srcElement).parentNode.parentNode.parentNode;
       		var autocomplete=parent.querySelector('datalist');
       		var options=autocomplete.querySelectorAll('option');
-
+      		console.log(el.srcElement.value.length);
       		if(autocomplete!==null && options.length===0 && el.srcElement.value.length>=autocomplete.dataset['minchar']){
       				var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
       				var params={
-					        url: autocomplete.dataset['source']+'/'+el.srcElement.value+'?format=json',
+					        url: encodeURI(autocomplete.dataset['source']+'/'+el.srcElement.value.replace('/','-')+'?format=json'),
 					        method: 'get',
-					        handleAs:'json'
+					        handleAs:'json',
 					      }
 	      			ajax.completes.then(function(req){
 	      				var optionlist=[];
@@ -245,7 +245,6 @@
 	      				});
 	      				var template=autocomplete.querySelector('template');
 	      				template.items=optionlist;
-	      				console.log(dataentry.candidates);
 	      			});
 
 				    ajax.send(params);
@@ -267,8 +266,11 @@
       					if(input.tagName==='PAPER-RADIO-GROUP'){
       						input.select(candidate[input.getAttribute('name')]);
       					}
-      					else
-      						input.value=candidate[input.getAttribute('name')];
+      					else{
+      						var val=candidate[input.getAttribute('name')];
+      						if(val!==null || val!=="" || val!==0)
+      							input.value=val;
+      					}
       				}
       			});
            			
