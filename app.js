@@ -81,14 +81,25 @@ app.get('/errors', isLoggedIn, function (req, res) {
     if (err) {
       throw err;
     }
-    var national_id = row.norm_national_id.replace(/\s/g, '').replace("နိုင်", "XOX");
-    db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), ' ', '') = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
+    var national_id = row.norm_national_id.replace(/\s/g, '').replace("နိုင်", "XOX").replace("နို်င", "XOX");
+    db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), 'နို်င', 'XOX'), ' ', '') = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
       if (err) {
         throw err;
       }
       if (matches.length < 2) {
-        // console.log('no match');
-        return res.redirect('/errors');
+        db.all("SELECT * FROM entries WHERE full_name = ? AND finalized IS NULL AND mother IS NOT NULL AND norm_national_id LIKE '" + matches[0].norm_national_id.split("(")[0] + "%'", matches[0].full_name, function(err, matches) {
+          if (err) {
+            throw err;
+          }
+          if (matches.length < 2) {
+            // console.log('no match');
+            return res.redirect('/errors');
+          }
+          res.render('errorcheck', {
+            matches: matches
+          });
+        });
+        return;
       }
       res.render('errorcheck', {
         matches: matches
@@ -391,7 +402,7 @@ app.get('/suggestcandidate/:national_id', function(req, res) {
       });
       res.json({ status: 'ok', data: list });
   };
-  
+
   db.all("SELECT national_id FROM entries WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
