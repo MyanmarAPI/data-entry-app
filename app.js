@@ -394,7 +394,8 @@ app.get('/candidate', function(req, res) {
 });
 
 app.get('/suggestcandidate/:national_id', function(req, res) {
-  var norm_number = myanmarNumbers(req.params.national_id);
+  var norm_number = myanmarNumbers(req.params.national_id).replace(/\s/g, '').replace("နိုင်", "XOX").replace("နို်င", "XOX");
+
   var respondCandidates = function(rows) {
       var list=[];
       rows.forEach(function(row){
@@ -403,13 +404,12 @@ app.get('/suggestcandidate/:national_id', function(req, res) {
       res.json({ status: 'ok', data: list });
   };
 
-  db.all("SELECT national_id FROM entries WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+  db.all("SELECT national_id FROM consensus_forms WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      // try with serial number
-      db.all("SELECT serial FROM entries WHERE serial LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+      db.all("SELECT national_id FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
@@ -435,13 +435,12 @@ app.get('/candidate/:national_id', function(req, res) {
       });
     }
   };
-  db.all("SELECT * FROM entries WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+  db.all("SELECT * FROM consensus_forms WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      // try with serial number
-      db.all("SELECT * FROM entries WHERE serial LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+      db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
