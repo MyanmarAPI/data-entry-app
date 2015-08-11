@@ -305,7 +305,8 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
   var form_values = [];
   form_values.push(req.user.id);
   form_values.push(req.body.form_id * 1);
-  form_values.push(myanmarNumbers(req.body.national_id));
+  var norm_national_id = myanmarNumbers(req.body.national_id);
+  form_values.push(norm_national_id);
   req.body.constituency_number = myanmarNumbers(req.body.constituency_number || '0');
   req.body.serial = myanmarNumbers(req.body.serial || '0');
 
@@ -330,11 +331,31 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
       }
     };
     if (req.body.form_id) {
-      db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
+      norm_national_id = (norm_national_id + "").replace(/\s/g, '').replace('နိုင်', 'XOX').replace('နို်င', 'XOX');
+      db.all("SELECT id FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') = ?", norm_national_id, function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
-        respondSubmit();
+        if (rows.length > 1) {
+          db.get('UPDATE forms SET first_entry_id = ' + entry_id + ', entries_done = 1 WHERE id = ' + req.body.form_id, function(err, row) {
+            if (err) {
+              return res.json({ status: 'error', error: err });
+            }
+            db.get("UPDATE entries SET finalized = 1 WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') = ?", norm_national_id, function(err) {
+              if (err) {
+                return res.json({ status: 'error', error: err });
+              }
+              respondSubmit();
+            });
+          });
+        } else {
+          db.get('UPDATE forms SET ' + entry_column + ' = ' + entry_id + ' WHERE id = ' + req.body.form_id, function(err, row) {
+            if (err) {
+              return res.json({ status: 'error', error: err });
+            }
+            respondSubmit();
+          });
+        }
       });
     } else {
       respondSubmit();
