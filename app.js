@@ -77,7 +77,7 @@ app.get('/names', function (req, res) {
 
 // error fixer - data should be relatively complete
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL ORDER BY RANDOM() LIMIT 1', function(err, row) {
+  db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL AND norm_national_id != \'0\' AND norm_national_id != \'-\' ORDER BY RANDOM() LIMIT 1', function(err, row) {
     if (err) {
       throw err;
     }
