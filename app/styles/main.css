@@ -37,6 +37,7 @@ paper-button .content{
 .content {
 	background-color: #FFF;
 }
+
 paper-button{
 	color:#FFF;
 }
@@ -44,7 +45,15 @@ paper-button .content{
 	background-color: #303f9f
 	
 }
+paper-button.next-page{
+	color: #303f9f;
+	float: right;
+	margin-top: 1em;
+}
 
+paper-button.next-page .content{
+	background-color: transparent;
+}
 #entry-title{
 	font-weight: lighter;
 	line-height: 50px;
