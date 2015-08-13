@@ -9,7 +9,7 @@
 		border:1px solid #CCC;
 		margin-left: -70px;
 	}
-	#form-scanned{
+	#form-scanned, #form-second {
 		margin: -160px 0 0 -65px;
 		width: 122%;
 	}
@@ -64,6 +64,10 @@
 				<a href="{{form_scanned}}" target="_blank">
 	  			<img id="form-scanned" src="{{form_scanned}}"/>
 				</a>
+				<br/>
+				<a href="#" target="_blank">
+					<img id="form-second" src="about:blank"/>
+				</a>
 			</div>
 			<div>
 				<paper-button class="next-page" on-click="_getFormNextPage">
@@ -78,6 +82,7 @@
 			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
 				<input type="hidden" name="id" value="{{id}}">
 				<input type="hidden" name="form_id" value="{{form_id}}">
+				<input type="hidden" name="second_page" value="{{second_page}}">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
 
 						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}" restamp="true">
@@ -203,7 +208,10 @@ var oneTimePeek = true;
 					// ok now rebuild url
 					var nexturl = img.split("_");
 					nexturl[4] = imgnum + ".jpg";
-					document.getElementById("form-scanned").src = nexturl.join("_");
+					nexturl = nexturl.join("_");
+					document.getElementById("form-second").src = nexturl;
+					document.getElementById("form-second").parentElement.href = nexturl;
+					this.second_page = nexturl;
 				}
       },
       _clearForm:function(){
@@ -227,6 +235,7 @@ var oneTimePeek = true;
       		if(typeof ev.detail.response.form !=='undefined'){
       			this.form_scanned=ev.detail.response.form.scan_file;
       			this.form_id=ev.detail.response.form.id;
+						this.second_page=0;
 		  	}
 		  	else if(ev.detail.response.status==='error'){
 		  		page.redirect('/applogin');

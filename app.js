@@ -239,7 +239,7 @@ var findNextForm = function(req, res, format) {
     endResponse = respondForm;
   }
 
-  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
+  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
@@ -251,7 +251,6 @@ var findNextForm = function(req, res, format) {
         var matching = entries_done(form_seeking_match, second_entry);
         if (matching === true) {
           // past entries match - update DB
-          console.log('all matched');
           db.run('UPDATE forms SET entries_done = 1 WHERE id = ' + second_entry.form_id);
           db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
           return redirectResponse();
@@ -268,13 +267,13 @@ var findNextForm = function(req, res, format) {
       return;
     }
 
-    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND entries.user_id != ' + req.user.id, function(err, row) {
+    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ' + req.user.id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
       }
       if (!row) {
         // no forms waiting for second validator
-        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL LIMIT 1', function(err, row) {
+        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page LIMIT 1', function(err, row) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }
@@ -335,6 +334,10 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
       db.all("SELECT id FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') = ?", norm_national_id, function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
+        }
+        if (req.body.second_page && req.body.second_page != "0") {
+          var scan_url = "/color_images" + unescape(req.body.second_page.split("color_images")[1]);
+          db.get('UPDATE forms SET second_page = 1 WHERE scan_file = ?', scan_url);
         }
         if (rows.length > 1) {
           db.get('UPDATE forms SET first_entry_id = ' + entry_id + ', entries_done = 1 WHERE id = ' + req.body.form_id, function(err, row) {
