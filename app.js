@@ -19,6 +19,26 @@ if (typeof global.it === 'function') {
 var timeago = require("timeago");
 var csv = require("fast-csv");
 
+var nat_id_sql =
+"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), 'နို်င', 'XOX'), ' ', ''), '-', ''), '.', ''), '/', ''), '့်', '့်'),'(', ''), ')', ''), '−', ''), '၊', '')";
+var full_name_sql =
+"REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(full_name, 'နိုင်', 'XOX'), 'နို်င', 'XOX'), ' ', ''), '-', ''), '.', ''), '/', ''), '့်', '့်'),'(', ''), ')', ''), '−', ''), '၊', '')";
+
+var normalizeNatId = function(natid) {
+  natid = (natid + "").replace(/နိုင်/g, 'XOX');
+  natid = natid.replace(/နို်င/g, 'XOX');
+  natid = natid.replace(/\-/g, '');
+  natid = natid.replace(/\−/g, '');
+  natid = natid.replace(/\./g, '');
+  natid = natid.replace(/\//g, '');
+  natid = natid.replace(/့်/g, '့်');
+  natid = natid.replace(/\(/g, '');
+  natid = natid.replace(/\)/g, '');
+  natid = natid.replace(/\s/g, '');
+  natid = natid.replace(/၊/g, '');
+  return natid;
+};
+
 var form_fields = ['house', 'serial', 'full_name', 'national_id', 'ward_village', 'voter_list_number', 'dob', 'nationality', 'religion', 'education', 'occupation', 'address_perm', 'address_mail', 'constituency_name', 'constituency_number', 'party', 'mother', 'mother_id', 'father', 'father_id', 'mother_ethnicity', 'father_ethnicity', 'mother_religion', 'father_religion'];
 
 // authentication
@@ -73,33 +93,54 @@ app.get('/names', function (req, res) {
       namelist: rows
     });
   });
+
+/*
+  db.all('SELECT ' + full_name_sql + ' AS full_name, ' + nat_id_sql + ' AS norm_national_id FROM entries WHERE finalized IS NULL AND mother IS NOT NULL ORDER BY ' + nat_id_sql, function(err, rows) {
+    rows = rows.map(function(row) {
+      return row.norm_national_id + " (" + row.full_name + ")";
+    });
+    res.json(rows);
+  });
+*/
 });
 
 // error fixer - data should be relatively complete
 app.get('/errors', isLoggedIn, function (req, res) {
   db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL AND norm_national_id != \'0\' AND norm_national_id != \'-\' ORDER BY RANDOM() LIMIT 1', function(err, row) {
     if (err) {
-      throw err;
+      return res.send('errors: first query');
     }
-    var national_id = row.norm_national_id.replace(/\s/g, '').replace("နိုင်", "XOX").replace("နို်င", "XOX");
-    db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), 'နို်င', 'XOX'), ' ', '') = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
+    var national_id = normalizeNatId(row.norm_national_id);
+    if (!national_id.match(/\d\d/)) {
+      // not a valid national id
+      return res.redirect('/errors');
+    }
+    db.all("SELECT * FROM entries WHERE " + nat_id_sql + " = ? AND finalized IS NULL AND mother IS NOT NULL", national_id, function(err, matches) {
       if (err) {
-        throw err;
+        return res.send('errors: second query');
       }
       if (matches.length < 2) {
-        db.all("SELECT * FROM entries WHERE full_name = ? AND finalized IS NULL AND mother IS NOT NULL AND norm_national_id LIKE '" + matches[0].norm_national_id.split("(")[0] + "%'", matches[0].full_name, function(err, matches) {
+        return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND mother IS NOT NULL AND " + nat_id_sql + " LIKE '" + normalizeNatId(matches[0].norm_national_id).split("(")[0] + "%'", normalizeNatId(matches[0].full_name), function(err, matches) {
           if (err) {
-            throw err;
+            return res.send('errors: third query');
           }
           if (matches.length < 2) {
-            // console.log('no match');
-            return res.redirect('/errors');
+            return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND mother IS NOT NULL AND " + nat_id_sql + " LIKE '%" + normalizeNatId(matches[0].norm_national_id).split(")")[1] + "'", normalizeNatId(matches[0].full_name), function(err, matches) {
+              if (err) {
+                return res.send('errors: fourth query');
+              }
+              if (matches.length < 2) {
+                return res.redirect('/errors');
+              }
+              res.render('errorcheck', {
+                matches: matches
+              });
+            });
           }
           res.render('errorcheck', {
             matches: matches
           });
         });
-        return;
       }
       res.render('errorcheck', {
         matches: matches
@@ -111,7 +152,7 @@ app.get('/errors', isLoggedIn, function (req, res) {
 app.post('/errors/:entry_id/:entry2_id', isLoggedIn, function (req, res) {
   db.get('SELECT * FROM entries WHERE id = ?', req.params.entry_id, function (err, row) {
     if (err) {
-      throw err;
+      return res.send('error posting');
     }
     if (!row) {
       return res.json({});
@@ -139,7 +180,7 @@ app.post('/errors/:entry_id/:entry2_id', isLoggedIn, function (req, res) {
 
     db.run("INSERT INTO consensus_forms (" + fields.join(',') + ") VALUES ('" + vals.join("','") + "')", function(err) {
       if (err) {
-        throw err;
+        return res.send('error inserting into consensus forms');
       }
 
       db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry_id);
@@ -239,19 +280,19 @@ var findNextForm = function(req, res, format) {
     endResponse = respondForm;
   }
 
-  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ' + req.user.id, function(err, form_seeking_match) {
+  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ? ORDER BY RANDOM()', req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (form_seeking_match && !req.query.third) {
-      db.get('SELECT * FROM entries WHERE id = ' + form_seeking_match.second_entry_id, function(err, second_entry) {
+      db.get('SELECT * FROM entries WHERE id = ?', form_seeking_match.second_entry_id, function(err, second_entry) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
         var matching = entries_done(form_seeking_match, second_entry);
         if (matching === true) {
           // past entries match - update DB
-          db.run('UPDATE forms SET entries_done = 1 WHERE id = ' + second_entry.form_id);
+          db.run('UPDATE forms SET entries_done = 1 WHERE id = ?', second_entry.form_id);
           db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
           return redirectResponse();
         }
@@ -267,13 +308,13 @@ var findNextForm = function(req, res, format) {
       return;
     }
 
-    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ' + req.user.id, function(err, row) {
+    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ? ORDER BY RANDOM()', req.user.id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
       }
       if (!row) {
         // no forms waiting for second validator
-        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page LIMIT 1', function(err, row) {
+        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page ORDER BY RANDOM()', function(err, row) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }
@@ -330,8 +371,8 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
       }
     };
     if (req.body.form_id) {
-      norm_national_id = (norm_national_id + "").replace(/\s/g, '').replace('နိုင်', 'XOX').replace('နို်င', 'XOX');
-      db.all("SELECT id FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') = ?", norm_national_id, function(err, rows) {
+      norm_national_id = normalizeNatId(norm_national_id + "");
+      db.all("SELECT id FROM entries WHERE " + nat_id_sql + " = ?", norm_national_id, function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
@@ -344,7 +385,7 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
             if (err) {
               return res.json({ status: 'error', error: err });
             }
-            db.get("UPDATE entries SET finalized = 1 WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') = ?", norm_national_id, function(err) {
+            db.get("UPDATE entries SET finalized = 1 WHERE " + nat_id_sql + " = ?", norm_national_id, function(err) {
               if (err) {
                 return res.json({ status: 'error', error: err });
               }
@@ -418,7 +459,7 @@ app.get('/candidate', function(req, res) {
 });
 
 app.get('/suggestcandidate/:national_id', function(req, res) {
-  var norm_number = myanmarNumbers(req.params.national_id).replace(/\s/g, '').replace("နိုင်", "XOX").replace("နို်င", "XOX");
+  var norm_number = normalizeNatId(myanmarNumbers(req.params.national_id))
 
   var respondCandidates = function(rows) {
       var list=[];
@@ -428,12 +469,12 @@ app.get('/suggestcandidate/:national_id', function(req, res) {
       res.json({ status: 'ok', data: list });
   };
 
-  db.all("SELECT national_id FROM consensus_forms WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+  db.all("SELECT national_id FROM consensus_forms WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      db.all("SELECT national_id FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+      db.all("SELECT national_id FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
@@ -449,6 +490,7 @@ app.get('/suggestcandidate/:national_id', function(req, res) {
 app.get('/candidate/:national_id', function(req, res) {
   var national_id=req.params.national_id.replace('*','/');
   var norm_number = myanmarNumbers(national_id);
+
   var respondCandidates = function(rows) {
     if (req.query.format === 'json') {
       res.json(rows);
@@ -464,7 +506,7 @@ app.get('/candidate/:national_id', function(req, res) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      db.all("SELECT * FROM entries WHERE REPLACE(REPLACE(REPLACE(norm_national_id, ' ', ''), 'နိုင်', 'XOX'), 'နို်င', 'XOX') LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+      db.all("SELECT * FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }

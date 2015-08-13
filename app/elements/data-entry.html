@@ -9,6 +9,9 @@
 		border:1px solid #CCC;
 		margin-left: -70px;
 	}
+	#form-scanned {
+		min-height: 300px;
+	}
 	#form-scanned, #form-second {
 		margin: -160px 0 0 -65px;
 		width: 122%;
@@ -72,7 +75,7 @@
 			<div>
 				<paper-button class="next-page" on-click="_getFormNextPage">
 				  <iron-icon icon="trending-flat"></iron-icon>
-				  Next Page
+				  Page 2?
 				</paper-button>
 			</div>
 		</div>
@@ -193,6 +196,11 @@ var oneTimePeek = true;
 				if (oneTimePeek) {
 					oneTimePeek = false;
       	  var img = document.getElementById("form-scanned").src;
+					if (img.split("_").length < 4) {
+						// there is no image
+						// why did you even click this
+						return;
+					}
 					var imgnum = (img.split("_")[4].split(".")[0] * 1 + 1) + "";
 					if (imgnum * 1 < 1000) {
 						if (imgnum * 1 < 100) {
