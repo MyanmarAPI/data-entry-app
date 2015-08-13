@@ -17,7 +17,12 @@ html
       br
       for match in matches
         span --
-        span= match.norm_national_id
+        span= match.full_name
+        span --
+      br
+      for match in matches
+        span --
+        span= match.national_id
         span --
       #comparer
         label
