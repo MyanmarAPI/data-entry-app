@@ -146,6 +146,7 @@
 </template>
 </dom-module>
 <script>
+var oneTimePeek = true;
 (function() {
 	Polymer({
       is: 'data-entry',
@@ -184,27 +185,26 @@
       		this.$$('#form').submit();
       },
       _getFormNextPage:function(){
-      		var dataentry=this;
-      		var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
-			var params={
-		        url: '/get-form',
-		        method: 'get',
-		        handleAs:'json'
-		      }
-			ajax.completes.then(function(req){
-				var forminfo=dataentry.$$('#form-info');
-				if(typeof req.response.form !=='undefined'){
-					dataentry.form_scanned=req.response.form.scan_file;
-			  		forminfo.text="Next page loaded";
-			  		
+				if (oneTimePeek) {
+					oneTimePeek = false;
+      	  var img = document.getElementById("form-scanned").src;
+					var imgnum = (img.split("_")[4].split(".")[0] * 1 + 1) + "";
+					if (imgnum * 1 < 1000) {
+						if (imgnum * 1 < 100) {
+							if (imgnum * 1 < 10) {
+								imgnum = "000" + imgnum;
+							} else {
+								imgnum = "00" + imgnum;
+							}
+						} else {
+							imgnum = "0" + imgnum;
+						}
+					}
+					// ok now rebuild url
+					var nexturl = img.split("_");
+					nexturl[4] = imgnum + ".jpg";
+					document.getElementById("form-scanned").src = nexturl.join("_");
 				}
-				else{
-			  		forminfo.text="No form loaded";
-				}
-				forminfo.show();
-			});
-
-	    ajax.send(params);
       },
       _clearForm:function(){
       	Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
