@@ -280,6 +280,10 @@ var findNextForm = function(req, res, format) {
     endResponse = respondForm;
   }
 
+  if (req.headers.referer.indexOf("fax") > -1) {
+    return res.json({ status: 'done' });
+  }
+
   db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ? ORDER BY RANDOM()', req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
