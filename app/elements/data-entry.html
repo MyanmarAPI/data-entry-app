@@ -197,12 +197,13 @@ var oneTimePeek = true;
 				if (oneTimePeek) {
 					oneTimePeek = false;
       	  var img = document.getElementById("form-scanned").src;
-					if (img.split("_").length < 4) {
+					if (img.split("_").length < 2) {
 						// there is no image
 						// why did you even click this
 						return;
 					}
-					var imgnum = (img.split("_")[4].split(".")[0] * 1 + 1) + "";
+					var imgnumpart = img.split("_")[img.split("_").length - 1];
+					var imgnum = (imgnumpart.split(".")[0] * 1 + 1) + "";
 					if (imgnum * 1 < 1000) {
 						if (imgnum * 1 < 100) {
 							if (imgnum * 1 < 10) {
@@ -216,7 +217,7 @@ var oneTimePeek = true;
 					}
 					// ok now rebuild url
 					var nexturl = img.split("_");
-					nexturl[4] = imgnum + ".jpg";
+					nexturl[nexturl.length - 1] = imgnum + ".jpg";
 					nexturl = nexturl.join("_");
 					document.getElementById("form-second").src = nexturl;
 					document.getElementById("form-second").parentElement.href = nexturl;
