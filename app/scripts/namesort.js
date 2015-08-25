@@ -14,7 +14,7 @@ names = names.sort(function(a, b) {
   a = a.trim();
   b = b.trim();
   for (var p = 0; p < prefixes.length; p++) {
-    if (a.indexOf(prefiex[p]) === 0) {
+    if (a.indexOf(prefixes[p]) === 0) {
       a = a.replace(prefixes[p], '').trim();
     }
     if (b.indexOf(prefixes[p]) === 0) {
