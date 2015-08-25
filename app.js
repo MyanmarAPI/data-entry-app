@@ -628,7 +628,7 @@ var scanImgDirectory = function(img_directory, color) {
         }
         if (!row) {
           if (color === "color") {
-            if (fname.indexOf("000000-test") > -1) {
+            if (fname.indexOf("000000-test") > -1 || fname.indexOf("DS_Store") > -1) {
               return;
             }
             db.get("INSERT INTO forms (scan_file, color_scan, approved) VALUES ('" + fname + "', '" + fname + "', 0)");
