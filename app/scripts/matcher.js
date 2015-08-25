@@ -32,7 +32,7 @@ function fixOrder(original_entry, key) {
   // use Myanmar punctuation
   // remove Myanmar punctuation from the end of a value
   entry = (original_entry + "").trim();
-  entry = entry.replace(/င့်/g, "င့်").replace(/\,/g, "၊").replace(/\−/g, "-").replace(/ည့်/g, "ည့်");
+  entry = entry.replace(/့်/g, "့်").replace(/\,/g, "၊").replace(/\−/g, "-").replace(/ည့်/g, "ည့်");
   entry = entry.replace("ဗုဒ္ဓဘာသာ", "ဗုဒ္ဓ");
   if (entry.length > 1 && entry.lastIndexOf("") === entry.length - 1 || entry.lastIndexOf("။") === entry.length - 1) {
     entry = entry.substring(0, entry.length - 1);

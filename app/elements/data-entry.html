@@ -9,7 +9,10 @@
 		border:1px solid #CCC;
 		margin-left: -70px;
 	}
-	#form-scanned{
+	#form-scanned {
+		min-height: 300px;
+	}
+	#form-scanned, #form-second {
 		margin: -160px 0 0 -65px;
 		width: 122%;
 	}
@@ -64,11 +67,15 @@
 				<a href="{{form_scanned}}" target="_blank">
 	  			<img id="form-scanned" src="{{form_scanned}}"/>
 				</a>
+				<br/>
+				<a href="#" target="_blank">
+					<img id="form-second" src="about:blank"/>
+				</a>
 			</div>
 			<div>
 				<paper-button class="next-page" on-click="_getFormNextPage">
 				  <iron-icon icon="trending-flat"></iron-icon>
-				  Next Page
+				  Page 2?
 				</paper-button>
 			</div>
 		</div>
@@ -78,6 +85,7 @@
 			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
 				<input type="hidden" name="id" value="{{id}}">
 				<input type="hidden" name="form_id" value="{{form_id}}">
+				<input type="hidden" name="second_page" value="{{second_page}}">
 				<template is="dom-repeat" items="[[formfields]]" as="item">
 
 						<template is="dom-if" if="{{_isTypeOf('string',item.type)}}" restamp="true">
@@ -146,6 +154,7 @@
 </template>
 </dom-module>
 <script>
+var oneTimePeek = true;
 (function() {
 	Polymer({
       is: 'data-entry',
@@ -184,27 +193,34 @@
       		this.$$('#form').submit();
       },
       _getFormNextPage:function(){
-      		var dataentry=this;
-      		var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
-			var params={
-		        url: '/get-form',
-		        method: 'get',
-		        handleAs:'json'
-		      }
-			ajax.completes.then(function(req){
-				var forminfo=dataentry.$$('#form-info');
-				if(typeof req.response.form !=='undefined'){
-					dataentry.form_scanned=req.response.form.scan_file;
-			  		forminfo.text="Next page loaded";
-			  		
+				if (oneTimePeek) {
+					oneTimePeek = false;
+      	  var img = document.getElementById("form-scanned").src;
+					if (img.split("_").length < 4) {
+						// there is no image
+						// why did you even click this
+						return;
+					}
+					var imgnum = (img.split("_")[4].split(".")[0] * 1 + 1) + "";
+					if (imgnum * 1 < 1000) {
+						if (imgnum * 1 < 100) {
+							if (imgnum * 1 < 10) {
+								imgnum = "000" + imgnum;
+							} else {
+								imgnum = "00" + imgnum;
+							}
+						} else {
+							imgnum = "0" + imgnum;
+						}
+					}
+					// ok now rebuild url
+					var nexturl = img.split("_");
+					nexturl[4] = imgnum + ".jpg";
+					nexturl = nexturl.join("_");
+					document.getElementById("form-second").src = nexturl;
+					document.getElementById("form-second").parentElement.href = nexturl;
+					this.second_page = nexturl;
 				}
-				else{
-			  		forminfo.text="No form loaded";
-				}
-				forminfo.show();
-			});
-
-	    ajax.send(params);
       },
       _clearForm:function(){
       	Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
@@ -227,6 +243,7 @@
       		if(typeof ev.detail.response.form !=='undefined'){
       			this.form_scanned=ev.detail.response.form.scan_file;
       			this.form_id=ev.detail.response.form.id;
+						this.second_page=0;
 		  	}
 		  	else if(ev.detail.response.status==='error'){
 		  		page.redirect('/applogin');
@@ -295,16 +312,21 @@
 
       		if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
       			var candidate=dataentry.candidates[el.srcElement.value];
+						console.log(candidate);
       			Polymer.dom(this.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
 
       				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
       					if(input.tagName==='PAPER-RADIO-GROUP'){
-      						input.select(candidate[input.getAttribute('name')]);
+									try {
+        						input.select(candidate[input.getAttribute('name')]);
+									} catch(e) {}
       					}
       					else{
-      						var val=candidate[input.getAttribute('name')];
-      						if(val!==null || val!=="" || val!==0)
-      							input.value=val;
+									try {
+        						var val=candidate[input.getAttribute('name')];
+        						if(val!==null || val!=="" || val!==0)
+        							input.value=val;
+									} catch(e) {}
       					}
       				}
       			});
