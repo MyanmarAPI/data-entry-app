@@ -1,28 +1,4 @@
-var prefixes = [
-  "ဒေါ်",
-  "Dr.",
-  "Dr",
-  "MD",
-  "ဦး",
-  "ဒေါက်တာ"
-];
-
-// Intl.Collator has to happen on the client side
-var collator = new Intl.Collator("my-MM");
-
-names = names.sort(function(a, b) {
-  a = a.trim();
-  b = b.trim();
-  for (var p = 0; p < prefixes.length; p++) {
-    if (a.indexOf(prefixes[p]) === 0) {
-      a = a.replace(prefixes[p], '').trim();
-    }
-    if (b.indexOf(prefixes[p]) === 0) {
-      b = b.replace(prefixes[p], '').trim();
-    }
-  }
-  return collator.compare(a, b);
-});
+names = myanmarNameSort(names);
 
 var prevname = null;
 for (var n = 0; n < names.length; n++) {
