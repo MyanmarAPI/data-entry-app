@@ -296,11 +296,43 @@ var oneTimePeek = true;
 	      			ajax.completes.then(function(req){
 	      				var optionlist=[];
 	      				dataentry.candidates=[];
-	      				req.response.forEach(function(el){
-	      					dataentry.candidates[el.national_id]=el;
-	      					optionlist.push(el.national_id);
+	      				req.response.forEach(function(row){
+
+	      					dataentry.candidates[row.national_id]=row;
+	      					console.log('push candidate'+dataentry.candidates[row.national_id]);
+	      					optionlist.push(row.national_id);
 	      				});
 	      				template.items=optionlist;
+	      				//check the record and load if it exist
+	 
+	      				if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
+	      					console.log('Matched')
+			      			var candidate=dataentry.candidates[el.srcElement.value];
+							
+			      			Polymer.dom(dataentry.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
+
+			      				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
+			      					if(input.tagName==='PAPER-RADIO-GROUP'){
+											console.log(candidate[input.getAttribute('name')]);
+			        						input.select(candidate[input.getAttribute('name')]);
+												
+			      					}
+			      					else{
+												
+			        						var val=candidate[input.getAttribute('name')];
+			        						console.log(val);
+			        						if(val!==null || val!=="" || val!==0)
+			        							input.value=val;
+												
+			      					}
+			      				}
+			      			});
+
+			      		}
+			      		else{
+			      			console.log('No match');
+			      			console.log(dataentry.candidates[el.srcElement.value]);
+			      		}
 	      			});
 
 				    ajax.send(params);
@@ -314,28 +346,7 @@ var oneTimePeek = true;
 
 
 
-      		if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
-      			var candidate=dataentry.candidates[el.srcElement.value];
-						console.log(candidate);
-      			Polymer.dom(this.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
-
-      				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
-      					if(input.tagName==='PAPER-RADIO-GROUP'){
-									try {
-        						input.select(candidate[input.getAttribute('name')]);
-									} catch(e) {}
-      					}
-      					else{
-									try {
-        						var val=candidate[input.getAttribute('name')];
-        						if(val!==null || val!=="" || val!==0)
-        							input.value=val;
-									} catch(e) {}
-      					}
-      				}
-      			});
-
-      		}
+      		
       		
       },
       _reRenderDynamicInput:function(ev){
