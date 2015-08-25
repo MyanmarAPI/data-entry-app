@@ -224,6 +224,10 @@ var oneTimePeek = true;
 				}
       },
       _clearForm:function(){
+				document.getElementById("form-second").src = "about:blank";
+				document.getElementById("form-second").parentElement.href = "#";
+				oneTimePeek = true;
+
       	Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
 					el.value='';
 				});
