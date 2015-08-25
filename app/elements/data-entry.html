@@ -206,15 +206,18 @@
 
 	    ajax.send(params);
       },
-      _handleSubmit:function(ev){
-      		console.log(ev);
-      		if(ev.detail.status==='ok'){
-				Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
+      _clearForm:function(){
+      	Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
 					el.value='';
 				});
 				Polymer.dom(this.root).querySelectorAll('paper-radio-button').forEach(function(el){
 					el.checked=false;
 				});
+		},
+      _handleSubmit:function(ev){
+      		console.log(ev);
+      		if(ev.detail.status==='ok'){
+				this._clearForm();
 				this.candidates=[];
 				this.$$('#submit-info').show();
       			this.$$('#get-form').generateRequest();
@@ -307,6 +310,8 @@
       			});
 
       		}
+      		else
+      			this._clearForm();
       },
       _reRenderDynamicInput:function(ev){
       		var input=Polymer.dom(ev.srcElement).parentNode.parentNode.querySelector('input');
