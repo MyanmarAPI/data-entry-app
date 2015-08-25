@@ -268,7 +268,7 @@
       		if(autocomplete!==null && options.length===0 && el.srcElement.value.length>=autocomplete.dataset['minchar']){
       				var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
       				var params={
-					        url: encodeURI(autocomplete.dataset['source']+'/'+el.srcElement.value.replace('/','-')+'?format=json'),
+					        url: encodeURI(autocomplete.dataset['source']+'/'+el.srcElement.value.replace('/','*')+'?format=json'),
 					        method: 'get',
 					        handleAs:'json',
 					      }
@@ -310,8 +310,7 @@
       			});
 
       		}
-      		else
-      			this._clearForm();
+      		
       },
       _reRenderDynamicInput:function(ev){
       		var input=Polymer.dom(ev.srcElement).parentNode.parentNode.querySelector('input');
