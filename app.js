@@ -512,12 +512,12 @@ app.get('/candidate/:national_id', function(req, res) {
       });
     }
   };
-  db.all("SELECT * FROM consensus_forms WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+  db.all("SELECT * FROM consensus_forms WHERE norm_national_id LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      db.all("SELECT * FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
+      db.all("SELECT * FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }

@@ -1,5 +1,5 @@
 [
-  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "autocomplete", "source":"candidate","minchar":5, "length": 50 },
+  { "label": "မှတ်ပုံတင်အမှတ်", "field": "national_id", "type": "autocomplete", "source":"candidate","minchar":5, "length": 50,"delay":500 },
   { "label": "လွှတ်တော်အမျိုးအစား", "field": "house", "type": "select", "options": [{"value":"အမျိုးသားလွှတ်တော်","label":"ပါတီ"},{"value":"ပြည်သူ့လွှတ်တော်","label":"တစ်ဦးချင်း"},{"value":"တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော် ","label":"တိုင်းရင်းသား"}
   ] },
   { "label": "ကိုယ်စားလှယ်လောင်း၏အမည်", "field": "full_name", "type": "string", "length": 50 },

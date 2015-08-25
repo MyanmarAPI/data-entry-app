@@ -114,7 +114,7 @@
 						       	<template is="dom-if" if="{{_isDynamicAutoComplete(item.minchar)}}" restamp="true">
 						       		<paper-input id$="{{_generateID('input_',item_field)}}" name$="[[item.field]]" type="text" label="[[item.label]]" on-input="_getList" required="true" list$="{{_generateID('list_',item.field)}}"></paper-input>
 						       	</template>
-						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]" data-minchar$="[[item.minchar]]">
+						       <datalist id$="{{_generateID('list_',item.field)}}" data-source$="[[item.source]]" data-minchar$="[[item.minchar]]" data-delay$="[[item.delay]]">
 						       		<template is="dom-repeat" items="[[item.options]]" as="option">
 						       			<option>[[option]]</option>
 						       		</template>
@@ -160,6 +160,7 @@ var oneTimePeek = true;
       is: 'data-entry',
       properties:{
       	form_id:Number,
+      	autocomplete_delay:Number,
       	form_scanned:{
       		type:String,
       		value:'../images/blank-form.png'
@@ -280,9 +281,12 @@ var oneTimePeek = true;
       		var dataentry=this;
       		var parent=Polymer.dom(el.srcElement).parentNode.parentNode.parentNode;
       		var autocomplete=parent.querySelector('datalist');
+      		var template=autocomplete.querySelector('template');
       		var options=autocomplete.querySelectorAll('option');
       		console.log(el.srcElement.value.length);
-      		if(autocomplete!==null && options.length===0 && el.srcElement.value.length>=autocomplete.dataset['minchar']){
+      		if(el.srcElement.value.length>=autocomplete.dataset['minchar']){
+      			window.clearTimeout(dataentry.autocomplete_delay);
+      			dataentry.autocomplete_delay=window.setTimeout(function(){
       				var ajax = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
       				var params={
 					        url: encodeURI(autocomplete.dataset['source']+'/'+el.srcElement.value.replace('/','*')+'?format=json'),
@@ -291,20 +295,20 @@ var oneTimePeek = true;
 					      }
 	      			ajax.completes.then(function(req){
 	      				var optionlist=[];
+	      				dataentry.candidates=[];
 	      				req.response.forEach(function(el){
 	      					dataentry.candidates[el.national_id]=el;
 	      					optionlist.push(el.national_id);
 	      				});
-	      				var template=autocomplete.querySelector('template');
 	      				template.items=optionlist;
 	      			});
 
 				    ajax.send(params);
+      			},autocomplete.dataset['delay']);
+      				
       		}
       		else if(options.length>0 && el.srcElement.value.length<autocomplete.dataset['minchar']){
-      			for (var i = 0; i < options.length; ++i){
-      				options[i].remove();
-      			}
+      			template.items=[];
       			dataentry.candidates=[];
       		}
 
