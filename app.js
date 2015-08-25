@@ -106,10 +106,11 @@ app.get('/names', function (req, res) {
 
 // error fixer - data should be relatively complete
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL AND norm_national_id != \'0\' AND norm_national_id != \'-\' ORDER BY RANDOM() LIMIT 1', function(err, row) {
+  db.get('SELECT * FROM entries WHERE finalized IS NULL AND mother IS NOT NULL AND norm_national_id != \'0\' AND norm_national_id != \'-\' LIMIT 15 ORDER BY RANDOM()', function(err, rows) {
     if (err) {
       return res.send('errors: first query');
     }
+    var row = rows[0];
     var national_id = normalizeNatId(row.norm_national_id);
     if (!national_id.match(/\d\d/)) {
       // not a valid national id
@@ -119,10 +120,16 @@ app.get('/errors', isLoggedIn, function (req, res) {
       if (err) {
         return res.send('errors: second query');
       }
+      if (!matches.length) {
+        return res.redirect('/errors');
+      }
       if (matches.length < 2) {
         return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND mother IS NOT NULL AND " + nat_id_sql + " LIKE '" + normalizeNatId(matches[0].norm_national_id).split("(")[0] + "%'", normalizeNatId(matches[0].full_name), function(err, matches) {
           if (err) {
             return res.send('errors: third query');
+          }
+          if (!matches.length) {
+            return res.redirect('/errors');
           }
           if (matches.length < 2) {
             return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND mother IS NOT NULL AND " + nat_id_sql + " LIKE '%" + normalizeNatId(matches[0].norm_national_id).split(")")[1] + "'", normalizeNatId(matches[0].full_name), function(err, matches) {
@@ -284,7 +291,7 @@ var findNextForm = function(req, res, format) {
     return res.json({ status: 'done' });
   }
 
-  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ? ORDER BY RANDOM()', req.user.id, function(err, form_seeking_match) {
+  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ?', req.user.id, function(err, form_seeking_match) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
@@ -312,13 +319,13 @@ var findNextForm = function(req, res, format) {
       return;
     }
 
-    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ? ORDER BY RANDOM()', req.user.id, function(err, row) {
+    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ?', req.user.id, function(err, row) {
       if (err) {
         return res.json({ status: 'error', error: err });
       }
       if (!row) {
         // no forms waiting for second validator
-        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page ORDER BY RANDOM()', function(err, row) {
+        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page', function(err, row) {
           if (err) {
             return res.json({ status: 'error', error: err });
           }

@@ -312,16 +312,21 @@ var oneTimePeek = true;
 
       		if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
       			var candidate=dataentry.candidates[el.srcElement.value];
+						console.log(candidate);
       			Polymer.dom(this.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
 
       				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
       					if(input.tagName==='PAPER-RADIO-GROUP'){
-      						input.select(candidate[input.getAttribute('name')]);
+									try {
+        						input.select(candidate[input.getAttribute('name')]);
+									} catch(e) {}
       					}
       					else{
-      						var val=candidate[input.getAttribute('name')];
-      						if(val!==null || val!=="" || val!==0)
-      							input.value=val;
+									try {
+        						var val=candidate[input.getAttribute('name')];
+        						if(val!==null || val!=="" || val!==0)
+        							input.value=val;
+									} catch(e) {}
       					}
       				}
       			});
