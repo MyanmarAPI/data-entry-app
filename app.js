@@ -460,9 +460,12 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
 app.get("/admin", function(req, res) {
   db.get("SELECT COUNT(*) AS total FROM entries", function(err, r1) {
     db.get("SELECT COUNT(*) AS total FROM consensus_forms", function(err, r2) {
-      res.render('admin', {
-        entries: r1.total,
-        consensus_forms: r2.total
+      db.get("SELECT COUNT(DISTINCT(form_id)) AS total FROM entries", function(err, r3) {
+        res.render('admin', {
+          entries: r1.total,
+          consensus_forms: r2.total,
+          scanned_candidates: r3.total
+        });
       });
     });
   });
