@@ -296,20 +296,19 @@ var findNextForm = function(req, res, format) {
   if (req.headers.referer.indexOf("fax") > -1) {
     return res.json({ status: 'done' });
   }
-    
 
-  db.get('SELECT f.* FROM forms f LEFT JOIN entries e on f.id=e.form_id WHERE  e.id IS NULL AND (f.last_loaded IS NULL OR f.last_loaded<?)', range, function(err, row) {
+  db.get('SELECT f.* FROM forms f LEFT JOIN entries e on f.id=e.form_id WHERE  e.id IS NULL AND NOT f.second_page AND (first_entry_id IS NULL AND second_entry_id IS NULL AND third_entry_id IS NULL) AND (f.last_loaded IS NULL OR f.last_loaded<?)', range, function(err, row) {
     if (err) {
+      console.log(err);
       return res.json({ status: 'error', error: err });
     }
-    console.log(row);
     if(typeof row!=='undefined'){
       console.log('updating form:'+row.id);
       db.run('UPDATE forms SET last_loaded = '+ts+' WHERE id = ?', row.id);
     }
 
     endResponse(res, row, 3);
-  
+
   });
 
 };
@@ -387,33 +386,20 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
     }
   };
 
-  if (req.body.id) {
-    entry_id = req.body.id * 1;
-    formsets = ['user_id', 'form_id', 'norm_national_id'].concat(form_fields);
-    for(var f = 0; f < formsets.length; f++) {
-      if (form_values[f]) {
-        formsets[f] = formsets[f] + " = '" + form_values[f] + "'";
-      } else {
-        formsets[f] = formsets[f] + " = ''";
-      }
+  // saving a new form
+  form_values = "'" + form_values.join("','") + "'";
+  console.log('recording new entry');
+
+  db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
+    if (err) {
+      console.log(err);
+      return res.json({ status: 'error', error: err });
     }
-    db.run('UPDATE entries SET ' + formsets.join(',') + ' WHERE id = ' + entry_id, function(err) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
-      }
-      saveEntry(entry_id);
-    });
-  } else {
-    form_values = "'" + form_values.join("','") + "'";
-    db.run('INSERT INTO entries (user_id, form_id, norm_national_id, ' + form_fields.join(',') + ') VALUES (' + form_values + ')', function(err) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
-      }
-      // record the entry
-      var entry_id = this.lastID;
-      saveEntry(entry_id);
-    });
-  }
+
+    // record the entry
+    var entry_id = this.lastID;
+    saveEntry(entry_id);
+  });
 });
 
 // review entries
