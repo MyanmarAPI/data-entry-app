@@ -82,7 +82,7 @@
 		<div class="flex-5 col">
 		<paper-toast id="submit-info" text="Data submitted, trying to get new form..."></paper-toast>
 		<paper-toast id="form-info" text=""></paper-toast>
-			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
+			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit" on-iron-form-invalid="_enableForm">
 				<input type="hidden" name="id" value="{{id}}">
 				<input type="hidden" name="form_id" value="{{form_id}}">
 				<input type="hidden" name="second_page" value="{{second_page}}">
@@ -189,6 +189,9 @@ var oneTimePeek = true;
 
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
+      },
+      _enableForm:function(){
+      		this.$$('#btn-submit').removeAttribute('disabled');
       },
       submitForm:function(){
       		this.$$('#form').submit();
