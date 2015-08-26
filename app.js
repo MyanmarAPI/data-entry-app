@@ -285,14 +285,10 @@ var finishForm = function(thirdEntry) {
 };
 
 var findNextForm = function(req, res, format) {
+  var ts = Math.round((new Date()).getTime() / 1000);
+  var range=ts-(5*60);
   var endResponse = renderForm;
-  var redirectResponse = function() {
-    if (format === 'json') {
-      res.redirect('/get-form?third=true');
-    } else {
-      res.redirect('/type-form?third=true')
-    }
-  };
+
   if (format === 'json') {
     endResponse = respondForm;
   }
@@ -300,58 +296,22 @@ var findNextForm = function(req, res, format) {
   if (req.headers.referer.indexOf("fax") > -1) {
     return res.json({ status: 'done' });
   }
+    
 
-  db.get('SELECT * FROM forms INNER JOIN entries on first_entry_id WHERE third_entry_id IS NULL AND first_entry_id > 0 AND second_entry_id > 0 AND NOT entries_done AND NOT second_page AND entries.user_id != ?', req.user.id, function(err, form_seeking_match) {
+  db.get('SELECT f.* FROM forms f LEFT JOIN entries e on f.id=e.form_id WHERE  e.id IS NULL AND (f.last_loaded IS NULL OR f.last_loaded<?)', range, function(err, row) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
-    if (form_seeking_match && !req.query.third) {
-      db.get('SELECT * FROM entries WHERE id = ?', form_seeking_match.second_entry_id, function(err, second_entry) {
-        if (err) {
-          return res.json({ status: 'error', error: err });
-        }
-        var matching = entries_done(form_seeking_match, second_entry);
-        if (matching === true) {
-          // past entries match - update DB
-          db.run('UPDATE forms SET entries_done = 1 WHERE id = ?', second_entry.form_id);
-          db.run("UPDATE forms SET consensus_id = '" + second_entry.norm_national_id + "' WHERE id = " + second_entry.form_id);
-          return redirectResponse();
-        }
-        if (second_entry.user_id === req.user.id * 1) {
-          // current user already reviewed this form
-          console.log('user cannot review');
-          return redirectResponse();
-        }
-        second_entry.scan_file = form_seeking_match.scan_file;
-        second_entry.id = second_entry.form_id;
-        endResponse(res, second_entry, 3, matching);
-      });
-      return;
+    console.log(row);
+    if(typeof row!=='undefined'){
+      console.log('updating form:'+row.id);
+      db.run('UPDATE forms SET last_loaded = '+ts+' WHERE id = ?', row.id);
     }
 
-    db.get('SELECT forms.id, scan_file FROM forms INNER JOIN entries ON first_entry_id WHERE second_entry_id IS NULL AND NOT second_page AND entries.user_id != ?', req.user.id, function(err, row) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
-      }
-      if (!row) {
-        // no forms waiting for second validator
-        db.get('SELECT id, scan_file FROM forms WHERE first_entry_id IS NULL AND NOT second_page', function(err, row) {
-          if (err) {
-            return res.json({ status: 'error', error: err });
-          }
-
-          if (!row) {
-            return res.json({ status: 'done' });
-            //res.send('No forms for you to digitize! (some may need a second validator)');
-          } else {
-            endResponse(res, row, 1);
-          }
-        });
-      } else {
-        endResponse(res, row, 2);
-      }
-    });
+    endResponse(res, row, 3);
+  
   });
+
 };
 
 app.get('/get-form', isLoggedIn, function(req, res) {
