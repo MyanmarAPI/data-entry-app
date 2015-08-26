@@ -323,7 +323,7 @@ var oneTimePeek = true;
 			        						input.select(candidate[input.getAttribute('name')]);
 
 			      					}
-			      					else{
+			      					else if(input.type!=='hidden'){
 
 			        						var val=candidate[input.getAttribute('name')];
 			        						console.log(val);
