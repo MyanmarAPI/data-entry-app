@@ -197,12 +197,13 @@ var oneTimePeek = true;
 				if (oneTimePeek) {
 					oneTimePeek = false;
       	  var img = document.getElementById("form-scanned").src;
-					if (img.split("_").length < 4) {
+					if (img.split("_").length < 2) {
 						// there is no image
 						// why did you even click this
 						return;
 					}
-					var imgnum = (img.split("_")[4].split(".")[0] * 1 + 1) + "";
+					var imgnumpart = img.split("_")[img.split("_").length - 1];
+					var imgnum = (imgnumpart.split(".")[0] * 1 + 1) + "";
 					if (imgnum * 1 < 1000) {
 						if (imgnum * 1 < 100) {
 							if (imgnum * 1 < 10) {
@@ -216,7 +217,7 @@ var oneTimePeek = true;
 					}
 					// ok now rebuild url
 					var nexturl = img.split("_");
-					nexturl[4] = imgnum + ".jpg";
+					nexturl[nexturl.length - 1] = imgnum + ".jpg";
 					nexturl = nexturl.join("_");
 					document.getElementById("form-second").src = nexturl;
 					document.getElementById("form-second").parentElement.href = nexturl;
@@ -224,6 +225,11 @@ var oneTimePeek = true;
 				}
       },
       _clearForm:function(){
+				document.getElementById("form-second").src = "about:blank";
+				document.getElementById("form-second").parentElement.href = "#"
+				this.second_page = "";
+				oneTimePeek = true;
+
       	Polymer.dom(this.root).querySelectorAll('paper-input,input').forEach(function(el){
 					el.value='';
 				});
@@ -304,26 +310,26 @@ var oneTimePeek = true;
 	      				});
 	      				template.items=optionlist;
 	      				//check the record and load if it exist
-	 
+
 	      				if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
 	      					console.log('Matched')
 			      			var candidate=dataentry.candidates[el.srcElement.value];
-							
+
 			      			Polymer.dom(dataentry.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
 
 			      				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
 			      					if(input.tagName==='PAPER-RADIO-GROUP'){
 											console.log(candidate[input.getAttribute('name')]);
 			        						input.select(candidate[input.getAttribute('name')]);
-												
+
 			      					}
 			      					else{
-												
+
 			        						var val=candidate[input.getAttribute('name')];
 			        						console.log(val);
 			        						if(val!==null || val!=="" || val!==0)
 			        							input.value=val;
-												
+
 			      					}
 			      				}
 			      			});
@@ -337,7 +343,7 @@ var oneTimePeek = true;
 
 				    ajax.send(params);
       			},autocomplete.dataset['delay']);
-      				
+
       		}
       		else if(options.length>0 && el.srcElement.value.length<autocomplete.dataset['minchar']){
       			template.items=[];
@@ -346,8 +352,8 @@ var oneTimePeek = true;
 
 
 
-      		
-      		
+
+
       },
       _reRenderDynamicInput:function(ev){
       		var input=Polymer.dom(ev.srcElement).parentNode.parentNode.querySelector('input');

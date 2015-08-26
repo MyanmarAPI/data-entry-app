@@ -1,0 +1,11 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    h2= house
+
+  script(type="text/javascript", src="/scripts/myanmar.names.js")
+  script(type="text/javascript") var candidates = !{JSON.stringify(candidates)};
+  script(type="text/javascript", src="/scripts/constituencies.js")

@@ -420,9 +420,12 @@ app.post('/submit-form', isLoggedIn, function(req, res) {
 app.get("/admin", function(req, res) {
   db.get("SELECT COUNT(*) AS total FROM entries", function(err, r1) {
     db.get("SELECT COUNT(*) AS total FROM consensus_forms", function(err, r2) {
-      res.render('admin', {
-        entries: r1.total,
-        consensus_forms: r2.total
+      db.get("SELECT COUNT(DISTINCT(form_id)) AS total FROM entries", function(err, r3) {
+        res.render('admin', {
+          entries: r1.total,
+          consensus_forms: r2.total,
+          scanned_candidates: r3.total
+        });
       });
     });
   });
@@ -588,7 +591,7 @@ var scanImgDirectory = function(img_directory, color) {
         }
         if (!row) {
           if (color === "color") {
-            if (fname.indexOf("000000-test") > -1) {
+            if (fname.indexOf("000000-test") > -1 || fname.indexOf("DS_Store") > -1) {
               return;
             }
             db.get("INSERT INTO forms (scan_file, color_scan, approved) VALUES ('" + fname + "', '" + fname + "', 0)");
@@ -643,6 +646,27 @@ app.get('/activate-form', function(req, res) {
       });
     });
   });
+});
+
+app.get('/house/:house', function(req, res) {
+  var processCandidates = function(err, rows) {
+    if (err) {
+      return res.send('error: ' + err);
+    }
+    res.render('constituencies', {
+      candidates: rows,
+      house: req.params.house
+    });
+  };
+  if (req.params.house === "lower") {
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'ပြည်သူ့လွှတ်တော်' OR house = 'lower' OR house = 'တစ်ဦးချင်း' or constituency_number = 0 ORDER BY constituency_name", processCandidates);
+  }
+  if (req.params.house === "upper") {
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'အမျိုးသားလွှတ်တော်' OR house = 'upper' OR house = 'ပါတီ' or constituency_number > 2 ORDER BY constituency_name, constituency_number", processCandidates);
+  }
+  if (req.params.house === "state") {
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE TRIM(house) = 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' OR house = 'state' OR house = 'တိုင်းရင်းသား' ORDER BY constituency_name, constituency_number", processCandidates);
+  }
 });
 
 // user authentication sections
