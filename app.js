@@ -605,31 +605,30 @@ app.get('/data-update', function(req, res) {
   res.send('processing new images');
 });
 
-app.get('/stop-repeat', function(req, res) {
-  db.get("UPDATE forms SET entries_done = 1, color_scan = '" + req.query.path + "' WHERE id IN (" + req.query.repeats + ') AND color_scan IS NULL', function(err, row) {
+app.get('/scancfix', function (req, res) {
+  fs.readdir(__dirname + "/app/color_images", function(err, files) {
     if (err) {
-      return res.json({ status: 'error', error: err });
+      return console.log(err);
     }
-    res.json({ status: 'stopped editing on forms' });
-  });
-});
-
-app.get('/activate-form', function(req, res) {
-  // find any open forms and allow new editors to edit them
-  db.get('UPDATE forms SET first_entry_id = NULL WHERE first_entry_id = -1', function(err, row) {
-    if (err) {
-      return res.json({ status: 'error', error: err });
-    }
-    db.get('UPDATE forms SET second_entry_id = NULL WHERE second_entry_id = -1', function(err, row) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
+    var changeFiles = [];
+    for (var f = 0; f < files.length; f++) {
+      if (files[f].indexOf("Scan_C") > -1 && files[f].split("_").length === 3) {
+        changeFiles.push(files[f]);
+        fs.rename(__dirname + "/app/color_images/" + files[f], __dirname + "/app/color_images/" + files[f].replace(/_(\d)/, "_0$1").replace("_", "__"), function(err) {
+          console.log(err);
+        });
       }
-      db.get('UPDATE forms SET third_entry_id = NULL WHERE third_entry_id = -1', function (err, row) {
-        if (err) {
-          return res.json({ status: 'error', error: err });
+    }
+    res.json(changeFiles);
+    db.all("SELECT id, scan_file FROM forms WHERE scan_file LIKE 'Scan_C_%'", function (err, rows) {
+      if (err) {
+        return console.log(err);
+      }
+      for (var r = 0; r < rows.length; r++) {
+        if (rows[r].scan_image.split("_").length === 3) {
+          db.run("UPDATE forms SET scan_file = ? WHERE id = " + id, rows[r].scan_file.replace(/_(\d)/, "_0$1").replace("_", "__"));
         }
-        res.json({ status: 'cleared forms' });
-      });
+      }
     });
   });
 });
