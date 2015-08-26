@@ -1,8 +1,16 @@
+var candidates_by_constituency = {};
 
 var group_names = [];
 var current_constituency = null;
 var current_constituency_number = null;
 var current_ul = null;
+
+var addStateName = function(name) {
+  var nameline = document.createElement("h2");
+  nameline.innerHTML = name;
+  document.body.appendChild(nameline);
+  current_constituency = name;
+};
 
 var addConName = function(name) {
   var nameline = document.createElement("h3");
@@ -18,37 +26,62 @@ var addConNumber = function(num) {
   current_constituency_number = num;
 };
 
-var closeLastGroup = function() {
-  if (group_names && group_names.length) {
-    group_names = myanmarNameSort(group_names, function(candidate) {
-      return candidate.full_name
-    });
-
-    var current_ul = document.createElement("ul");
-    document.body.appendChild(current_ul);
-    for (var i = 0; i < group_names.length; i++) {
-      var candidate = document.createElement("li");
-      candidate.innerHTML = group_names[i].full_name + " (" + group_names[i].national_id + ")";
-      current_ul.appendChild(candidate);
-    }
-    group_names = [];
+var addList = function(list) {
+  var ul = document.createElement("table");
+  ul.border = "1";
+  document.body.appendChild(ul);
+  for (var i = 0; i < list.length; i++) {
+    var li = document.createElement("tr");
+    li.innerHTML = "<td>" + list[i].full_name + "</td><td>" + list[i].national_id + "</td>";
+    ul.appendChild(li);
   }
-}
+};
 
 for (var c = 0; c < candidates.length; c++) {
-  if (current_constituency !== candidates[c].constituency_name) {
-    closeLastGroup();
+  var candidate = candidates[c];
+  if (!candidates_by_constituency[candidate.constituency_name]) {
+    candidates_by_constituency[candidate.constituency_name] = [];
+  }
+  candidates_by_constituency[candidate.constituency_name].push(candidate);
+}
 
-    addConName(candidates[c].constituency_name);
-    if (candidates[c].constituency_number) {
-      addConNumber(candidates[c].constituency_number);
+function outputConstituencies(constituencies) {
+  for (var c = 0; c < constituencies.length; c++) {
+    var constituency = constituencies[c];
+    if (house === "upper") {
+      constituency = constituency.area;
     }
 
-  } else if (candidates[c].constituency_number && current_constituency_number !== candidates[c].constituency_number) {
-    closeLastGroup();
-    addConNumber(candidates[c].constituency_number);
-  }
+    addConName(constituency);
 
-  group_names.push(candidates[c]);
+    var my_candidates = myanmarNameSort((candidates_by_constituency[constituency] || []), function(candidate) {
+      return candidate.full_name;
+    });
+
+    if (house === "lower") {
+      addList(my_candidates);
+    }
+    if (house === "upper") {
+      for (var num = 1; num < 13; num++) {
+        addConNumber(num);
+        var con_candidates = [];
+        for (var m = 0; m < my_candidates.length; m++) {
+          if (my_candidates[m].constituency_number * 1 == num) {
+            con_candidates.push(my_candidates[m]);
+          }
+        }
+        addList(con_candidates);
+      }
+    }
+  }
 }
-closeLastGroup();
+
+if (house === "lower") {
+  for (var s = 0; s < constituencies.length; s++) {
+    addStateName(constituencies[s].area);
+    outputConstituencies(constituencies[s].constituencies);
+  }
+}
+if (house === "upper") {
+  outputConstituencies(constituencies);
+}

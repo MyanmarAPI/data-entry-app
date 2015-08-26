@@ -634,20 +634,27 @@ app.get('/activate-form', function(req, res) {
   });
 });
 
+var upper = require("./data/upper_house.json");
+var lower = require("./data/lower_house.json");
+
 app.get('/house/:house', function(req, res) {
+  var constituencies;
   var processCandidates = function(err, rows) {
     if (err) {
       return res.send('error: ' + err);
     }
     res.render('constituencies', {
       candidates: rows,
+      constituencies: constituencies,
       house: req.params.house
     });
   };
   if (req.params.house === "lower") {
+    constituencies = lower;
     db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'ပြည်သူ့လွှတ်တော်' OR house = 'lower' OR house = 'တစ်ဦးချင်း' or constituency_number = 0 ORDER BY constituency_name", processCandidates);
   }
   if (req.params.house === "upper") {
+    constituencies = upper;
     db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'အမျိုးသားလွှတ်တော်' OR house = 'upper' OR house = 'ပါတီ' or constituency_number > 2 ORDER BY constituency_name, constituency_number", processCandidates);
   }
   if (req.params.house === "state") {

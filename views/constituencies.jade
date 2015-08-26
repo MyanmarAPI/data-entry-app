@@ -7,5 +7,7 @@ html
     h2= house
 
   script(type="text/javascript", src="/scripts/myanmar.names.js")
+  script(type="text/javascript") var house = !{JSON.stringify(house)};
+  script(type="text/javascript") var constituencies = !{JSON.stringify(constituencies)};
   script(type="text/javascript") var candidates = !{JSON.stringify(candidates)};
   script(type="text/javascript", src="/scripts/constituencies.js")
