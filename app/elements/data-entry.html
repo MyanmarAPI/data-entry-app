@@ -145,7 +145,7 @@
 				    </div>
 				</template>
 				<div class="submit">
-					<paper-button raised on-click="submitForm">Submit Form</paper-button>
+					<paper-button id="btn-submit" raised on-click="submitForm">Submit Form</paper-button>
 				</div>
 			</form>
 
@@ -192,6 +192,7 @@ var oneTimePeek = true;
       },
       submitForm:function(){
       		this.$$('#form').submit();
+      		this.$$('#btn-submit').setAttribute('disabled',true);
       },
       _getFormNextPage:function(){
 				if (oneTimePeek) {
@@ -240,11 +241,13 @@ var oneTimePeek = true;
       _handleSubmit:function(ev){
       		console.log(ev);
       		if(ev.detail.status==='ok'){
+
 				this._clearForm();
 				this.candidates=[];
 				this.$$('#submit-info').show();
       			this.$$('#get-form').generateRequest();
       		}
+      		this.$$('#btn-submit').removeAttribute('disabled');
       },
       _handleForm:function(ev){
       		if(typeof ev.detail.response.form !=='undefined'){
@@ -283,12 +286,16 @@ var oneTimePeek = true;
       			}
       		}
       },
+      _cleanSpace:function(str){
+      		return str.replace(' ','');
+      },
       _getList:function(el){
       		var dataentry=this;
       		var parent=Polymer.dom(el.srcElement).parentNode.parentNode.parentNode;
       		var autocomplete=parent.querySelector('datalist');
       		var template=autocomplete.querySelector('template');
       		var options=autocomplete.querySelectorAll('option');
+      		el.srcElement.value=dataentry._cleanSpace(el.srcElement.value);
       		console.log(el.srcElement.value.length);
       		if(el.srcElement.value.length>=autocomplete.dataset['minchar']){
       			window.clearTimeout(dataentry.autocomplete_delay);
@@ -303,17 +310,18 @@ var oneTimePeek = true;
 	      				var optionlist=[];
 	      				dataentry.candidates=[];
 	      				req.response.forEach(function(row){
-
-	      					dataentry.candidates[row.national_id]=row;
-	      					console.log('push candidate'+dataentry.candidates[row.national_id]);
-	      					optionlist.push(row.national_id);
+	      					var natid=dataentry._cleanSpace(row.national_id);
+	      					dataentry.candidates[natid]=row;
+	      					console.log('push candidate'+dataentry.candidates[natid]);
+	      					optionlist.push(natid);
 	      				});
 	      				template.items=optionlist;
 	      				//check the record and load if it exist
 
 	      				if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
 	      					console.log('Matched')
-			      			var candidate=dataentry.candidates[el.srcElement.value];
+	      					var natid=dataentry._cleanSpace(el.srcElement.value);
+			      			var candidate=dataentry.candidates[natid];
 
 			      			Polymer.dom(dataentry.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
 
