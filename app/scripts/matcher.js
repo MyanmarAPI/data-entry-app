@@ -1,4 +1,3 @@
-var unknowns = [];
 var set_keys = [];
 var set_fields = [];
 var clicked = false;
@@ -87,7 +86,7 @@ function queryMatch() {
   // show the next human decision for this data
 
   // avoid strings which should be different anyway
-  var boring_keys = ["saved", "id", "user_id", "mother_name"]; // mother_name was a mistaken column!
+  var boring_keys = ["saved", "id", "user_id", "mother_name", "form_id", "last_loaded", "unknowns", "finalized"]; // mother_name was a mistakenly added column!
 
   // avoid strings which a person cannot find out by looking
   var skip_keys = ["dob", "ward_village", "house", "father_id", "mother_id", "national_id", "norm_national_id"];
@@ -100,20 +99,38 @@ function queryMatch() {
       continue;
     }
 
-    // make small edits, make a note of the change
+    // make small edits to normalize text
     matches[0][key] = fixOrder(matches[0][key], key);
     matches[1][key] = fixOrder(matches[1][key], key);
-    set_keys.push(key);
 
     var xslug = (matches[0][key] + "").toLowerCase().replace(/\s/g, '');
     var yslug = (matches[1][key] + "").toLowerCase().replace(/\s/g, '');
+
+    if (xslug === "undefined" || xslug === "-" || xslug === "") {
+      // didn't get a good value from the original form
+      // keep consensus form's value
+      continue;
+    }
+    if (yslug === "undefined" || yslug === "-" || yslug === "") {
+      // didn't have a good value in the consensus form
+      // use the original form value
+      set_keys.push(key);
+      set_fields.push({
+        key: key,
+        selection: matches[0][key]
+      });
+      continue;
+    }
+
     if (xslug != yslug) {
-      // if this is a field that the user cannot correct
-      // remember the uncertainty
-      if (skip_keys.indexOf(key) > -1) {
-        if (unknowns.indexOf(key) === -1) {
-          unknowns.push(key);
-        }
+      // if this is a field that the user does not know visually
+      // settle the uncertainty with the one which saw the scan form
+      if (skip_keys.indexOf(key) > -1 || matches[1].unknowns.split(",").indexOf(key) > -1) {
+        set_keys.push(key);
+        set_fields.push({
+          key: key,
+          selection: matches[0][key]
+        });
         continue;
       }
 
@@ -160,16 +177,7 @@ function queryMatch() {
 
       // clicking Skip adds this field to unknowns and keeps going
       $("#skip").off("click").click(function() {
-        clicked = true;
-        unknowns.push(key);
-        var original;
-        if (matches[0][key].length > matches[1][key].length) {
-          original = matches[1][key];
-          matches[1][key] = matches[0][key];
-        } else {
-          original = matches[0][key];
-          matches[0][key] = matches[1][key];
-        }
+        // settle unknown with the one which saw the original form
         set_fields.push({
           key: key,
           selection: matches[0][key]
@@ -189,11 +197,16 @@ function queryMatch() {
     // when you reach the end of conflicts on this form
     // post and get a new form
     $("#back").hide();
-    var msg = { unknowns: unknowns, set_fields: set_fields };
+    var msg = { set_fields: set_fields, norm_national_id: matches[0].norm_national_id };
     if (!clicked) {
+      $.post("/errors/" + matches[0].id + "/" + matches[1].id + "/" + matches[0].form_id, msg, function(data) {
+        window.location.reload();
+      });
+      /*
       $.post("/errors/" + matches[0].id + "/" + matches[1].id, msg, function(data) {
         window.location.reload();
       });
+      */
     } else {
       $("label, button, textarea").hide();
       $("#back").show().off("click").click(function() {
@@ -207,11 +220,17 @@ function queryMatch() {
 
 // after finishing a user, last choice to go back or advance
 $("#next").hide().click(function() {
-  var msg = { unknowns: unknowns, set_fields: set_fields };
+  var msg = { set_fields: set_fields, norm_national_id: matches[0].norm_national_id };
+  $.post("/errors/" + matches[0].id + "/" + matches[1].id + "/" + matches[0].form_id, msg, function(data) {
+    window.location.reload();
+  });
+  /*
   $.post("/errors/" + matches[0].id + "/" + matches[1].id, msg, function(data) {
     window.location.reload();
   });
+  */
 });
 
+$("#check").attr("href", "/form/" + matches[0].form_id);
 queryMatch();
 $("#back").hide();

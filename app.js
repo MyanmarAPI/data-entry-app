@@ -97,61 +97,36 @@ app.get('/names', function (req, res) {
 });
 
 // error fixer - data should be relatively complete
+app.get('/form/:id', function (req, res) {
+  db.get('SELECT scan_file FROM forms WHERE id = ?', req.params.id, function (err, form) {
+    res.redirect(form.scan_file);
+  });
+});
+
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized IS NULL AND norm_national_id != \'0\' AND norm_national_id != \'-\' ORDER BY norm_national_id ASC LIMIT 55', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 40', function(err, rows) {
     if (err) {
-      return res.send('errors: first query');
+      return res.json(err);
     }
-    rows.sort(function() {
-      return Math.random() - 0.5
-    });
-    var row = rows[0];
-    var national_id = normalizeNatId(row.norm_national_id);
-    if (!national_id.match(/\d\d/)) {
-      // not a valid national id
-      console.log('redirect 1');
-      db.run('UPDATE entries SET finalized = 10101 WHERE id = ?', row.id);
+    var final_entry = rows[Math.floor(Math.random() * 40)];
+
+    if (!final_entry.norm_national_id.match(/\d\d/)) {
+      // not a valid ID
       return res.redirect('/errors');
     }
-    db.all("SELECT * FROM entries WHERE " + nat_id_sql + " = ? AND finalized IS NULL", national_id, function(err, matches) {
+
+    var norm_id = normalizeNatId(final_entry.norm_national_id);
+
+    db.all('SELECT * FROM consensus_forms WHERE ' + nat_id_sql + ' = ?', norm_id, function(err, matches) {
       if (err) {
-        return res.send('errors: second query');
+        return res.json(err);
       }
       if (!matches.length) {
         return res.redirect('/errors');
       }
-      if (matches.length < 2) {
-        return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND " + nat_id_sql + " LIKE '" + normalizeNatId(matches[0].norm_national_id).split("(")[0] + "%'", normalizeNatId(matches[0].full_name), function(err, matches) {
-          if (err) {
-            return res.send('errors: third query');
-          }
-          if (!matches.length) {
-            return res.redirect('/errors');
-          }
-          if (matches.length < 2) {
-            return db.all("SELECT * FROM entries WHERE " + full_name_sql + " = ? AND finalized IS NULL AND " + nat_id_sql + " LIKE '%" + normalizeNatId(matches[0].norm_national_id).split(")")[1] + "'", normalizeNatId(matches[0].full_name), function(err, matches) {
-              if (err) {
-                return res.send('errors: fourth query');
-              }
-              if (matches.length < 2) {
-                console.log('redirect 4');
-                if (matches.length) {
-                  db.run('UPDATE entries SET finalized = 10101 WHERE id = ?', matches[0].id);
-                }
-                return res.redirect('/errors');
-              }
-              res.render('errorcheck', {
-                matches: matches
-              });
-            });
-          }
-          res.render('errorcheck', {
-            matches: matches
-          });
-        });
-      }
+
       res.render('errorcheck', {
-        matches: matches
+        matches: [final_entry].concat(matches)
       });
     });
   });
@@ -195,6 +170,36 @@ app.post('/errors/:entry_id/:entry2_id', isLoggedIn, function (req, res) {
       db.run('UPDATE entries SET finalized = 1 WHERE id = ?', req.params.entry2_id);
 
       return res.json({});
+    });
+  });
+});
+
+app.post('/errors/:final_entry_id/:consensus_form_id/:form_id', isLoggedIn, function (req, res) {
+  var norm_id = normalizeNatId(req.body.norm_national_id);
+  db.run('UPDATE entries SET finalized = 3 WHERE ' + nat_id_sql + ' = ?', norm_id, function (err) {
+    if (err) {
+      return res.json(err);
+    }
+
+    var update_statements = ['form_id = ' + req.params.form_id * 1];
+
+    var set_fields = (req.body.set_fields || []);
+    var updated_fields = [];
+    for (var i = set_fields.length - 1; i >= 0; i--) {
+      var set_key = set_fields[i].key;
+      if (updated_fields.indexOf(set_key) === -1) {
+        var set_val = set_fields[i].selection;
+        updated_fields.push(set_key);
+        update_statements.push(set_key + " = '" + set_val + "'");
+      }
+    }
+
+    // console.log('UPDATE consensus_forms SET ' + update_statements.join(',') + ' WHERE id = ?');
+    db.run('UPDATE consensus_forms SET ' + update_statements.join(',') + ' WHERE id = ?', req.params.final_entry_id, function (err) {
+      if (err) {
+        return res.json(err);
+      }
+      return res.redirect('/errors');
     });
   });
 });
@@ -398,10 +403,13 @@ app.get("/admin", function(req, res) {
   db.get("SELECT COUNT(*) AS total FROM entries", function(err, r1) {
     db.get("SELECT COUNT(*) AS total FROM consensus_forms", function(err, r2) {
       db.get("SELECT COUNT(DISTINCT(form_id)) AS total FROM entries", function(err, r3) {
-        res.render('admin', {
-          entries: r1.total,
-          consensus_forms: r2.total,
-          scanned_candidates: r3.total
+        db.get("SELECT COUNT(*) FROM consensus_forms WHERE form_id > 0", function(err, r4) {
+          res.render('admin', {
+            entries: r1.total,
+            consensus_forms: r2.total,
+            scanned_candidates: r3.total,
+            consensus_forms_with_scans: r4.total
+          });
         });
       });
     });
