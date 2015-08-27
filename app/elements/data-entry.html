@@ -170,9 +170,9 @@ var oneTimePeek = true;
 	        value: function() {
 	          return this.$$('#form');
 	        }
-	      }
+	      },
+	    candidates:Object
       },
-      candidates:[],
    	  _generateID:function(prefix,field){
    	  		return prefix+field;
    	  },
@@ -291,7 +291,7 @@ var oneTimePeek = true;
       		}
       },
       _cleanSpace:function(str){
-      		return str.replace(' ','');
+      		return str.replace(/ /g,'');
       },
       _getList:function(el){
       		var dataentry=this;
@@ -313,20 +313,20 @@ var oneTimePeek = true;
 	      			ajax.completes.then(function(req){
 	      				var optionlist=[];
 	      				dataentry.candidates=[];
-	      				req.response.forEach(function(row){
+	      				for (var i = req.response.length - 1; i >= 0; i--) {
+	      					var row=req.response[i];
 	      					var natid=dataentry._cleanSpace(row.national_id);
 	      					dataentry.candidates[natid]=row;
-	      					console.log('push candidate'+dataentry.candidates[natid]);
 	      					optionlist.push(natid);
-	      				});
+	      				};
+	      				
 	      				template.items=optionlist;
 	      				//check the record and load if it exist
-
-	      				if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
+	      				var natid=dataentry._cleanSpace(el.srcElement.value);
+	      				if(typeof dataentry.candidates[natid]!=='undefined'){
 	      					console.log('Matched')
-	      					var natid=dataentry._cleanSpace(el.srcElement.value);
+	      		
 			      			var candidate=dataentry.candidates[natid];
-			      			
 
 							//is valid date format
 							var calculateAge = function (dateOfBirth) {
@@ -371,7 +371,8 @@ var oneTimePeek = true;
 
 			      		}
 			      		else{
-			      			console.log('No match');
+			      			console.log('No match on '+el.srcElement.value);
+			      			console.log(dataentry.candidates);
 			      			console.log(dataentry.candidates[el.srcElement.value]);
 			      		}
 	      			});
