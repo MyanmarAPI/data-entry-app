@@ -70,3 +70,12 @@ button#correct {
 button#skip {
   float: right;
 }
+
+a#check {
+  float: right;
+  text-decoration: none;
+  display: block;
+  padding: 8px;
+  border: 1px solid blue;
+  border-radius: 4px;
+}
