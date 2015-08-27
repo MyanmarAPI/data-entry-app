@@ -82,7 +82,7 @@
 		<div class="flex-5 col">
 		<paper-toast id="submit-info" text="Data submitted, trying to get new form..."></paper-toast>
 		<paper-toast id="form-info" text=""></paper-toast>
-			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit">
+			<form is="iron-form" id="form" method="post" action="/submit-form" on-iron-form-response="_handleSubmit" on-iron-form-invalid="_enableForm">
 				<input type="hidden" name="id" value="{{id}}">
 				<input type="hidden" name="form_id" value="{{form_id}}">
 				<input type="hidden" name="second_page" value="{{second_page}}">
@@ -145,7 +145,7 @@
 				    </div>
 				</template>
 				<div class="submit">
-					<paper-button raised on-click="submitForm">Submit Form</paper-button>
+					<paper-button id="btn-submit" raised on-click="submitForm">Submit Form</paper-button>
 				</div>
 			</form>
 
@@ -190,8 +190,12 @@ var oneTimePeek = true;
       loadForm:function(){
       		this.$$('#get-form').generateRequest();
       },
+      _enableForm:function(){
+      		this.$$('#btn-submit').removeAttribute('disabled');
+      },
       submitForm:function(){
       		this.$$('#form').submit();
+      		this.$$('#btn-submit').setAttribute('disabled',true);
       },
       _getFormNextPage:function(){
 				if (oneTimePeek) {
@@ -240,11 +244,13 @@ var oneTimePeek = true;
       _handleSubmit:function(ev){
       		console.log(ev);
       		if(ev.detail.status==='ok'){
+
 				this._clearForm();
 				this.candidates=[];
 				this.$$('#submit-info').show();
       			this.$$('#get-form').generateRequest();
       		}
+      		this.$$('#btn-submit').removeAttribute('disabled');
       },
       _handleForm:function(ev){
       		if(typeof ev.detail.response.form !=='undefined'){
@@ -283,12 +289,16 @@ var oneTimePeek = true;
       			}
       		}
       },
+      _cleanSpace:function(str){
+      		return str.replace(' ','');
+      },
       _getList:function(el){
       		var dataentry=this;
       		var parent=Polymer.dom(el.srcElement).parentNode.parentNode.parentNode;
       		var autocomplete=parent.querySelector('datalist');
       		var template=autocomplete.querySelector('template');
       		var options=autocomplete.querySelectorAll('option');
+      		el.srcElement.value=dataentry._cleanSpace(el.srcElement.value);
       		console.log(el.srcElement.value.length);
       		if(el.srcElement.value.length>=autocomplete.dataset['minchar']){
       			window.clearTimeout(dataentry.autocomplete_delay);
@@ -303,18 +313,42 @@ var oneTimePeek = true;
 	      				var optionlist=[];
 	      				dataentry.candidates=[];
 	      				req.response.forEach(function(row){
-
-	      					dataentry.candidates[row.national_id]=row;
-	      					console.log('push candidate'+dataentry.candidates[row.national_id]);
-	      					optionlist.push(row.national_id);
+	      					var natid=dataentry._cleanSpace(row.national_id);
+	      					dataentry.candidates[natid]=row;
+	      					console.log('push candidate'+dataentry.candidates[natid]);
+	      					optionlist.push(natid);
 	      				});
 	      				template.items=optionlist;
 	      				//check the record and load if it exist
 
 	      				if(typeof dataentry.candidates[el.srcElement.value]!=='undefined'){
 	      					console.log('Matched')
-			      			var candidate=dataentry.candidates[el.srcElement.value];
+	      					var natid=dataentry._cleanSpace(el.srcElement.value);
+			      			var candidate=dataentry.candidates[natid];
+			      			
 
+							//is valid date format
+							var calculateAge = function (dateOfBirth) {
+								var dateToCalculate=new Date();
+							    var calculateYear = dateToCalculate.getFullYear();
+							    var calculateMonth = dateToCalculate.getMonth();
+							    var calculateDay = dateToCalculate.getDate();
+
+							    var birthYear = dateOfBirth.getFullYear();
+							    var birthMonth = dateOfBirth.getMonth();
+							    var birthDay = dateOfBirth.getDate();
+
+							    var age = calculateYear - birthYear;
+							    var ageMonth = calculateMonth - birthMonth;
+							    var ageDay = calculateDay - birthDay;
+
+							    if (ageMonth < 0 || (ageMonth == 0 && ageDay < 0)) {
+							        age = parseInt(age) - 1;
+							    }
+							    return age;
+							}
+
+			      			candidate['age']=calculateAge(new Date(candidate['dob']));
 			      			Polymer.dom(dataentry.root).querySelectorAll('input,paper-input,paper-radio-group').forEach(function(input){
 
 			      				if(typeof candidate[input.getAttribute('name')]!=='undefined'){
@@ -323,7 +357,7 @@ var oneTimePeek = true;
 			        						input.select(candidate[input.getAttribute('name')]);
 
 			      					}
-			      					else{
+			      					else if(input.type!=='hidden'){
 
 			        						var val=candidate[input.getAttribute('name')];
 			        						console.log(val);
