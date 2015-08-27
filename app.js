@@ -94,15 +94,6 @@ app.get('/names', function (req, res) {
       namelist: rows
     });
   });
-
-/*
-  db.all('SELECT ' + full_name_sql + ' AS full_name, ' + nat_id_sql + ' AS norm_national_id FROM entries WHERE finalized IS NULL AND mother IS NOT NULL ORDER BY ' + nat_id_sql, function(err, rows) {
-    rows = rows.map(function(row) {
-      return row.norm_national_id + " (" + row.full_name + ")";
-    });
-    res.json(rows);
-  });
-*/
 });
 
 // error fixer - data should be relatively complete
@@ -605,6 +596,7 @@ app.get('/data-update', function(req, res) {
   res.send('processing new images');
 });
 
+/*
 app.get('/scancfix', function (req, res) {
   fs.readdir(__dirname + "/app/color_images", function(err, files) {
     if (err) {
@@ -632,6 +624,7 @@ app.get('/scancfix', function (req, res) {
     });
   });
 });
+*/
 
 var upper = require("./data/upper_house.json");
 var lower = require("./data/lower_house.json");
