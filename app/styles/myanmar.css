@@ -79,3 +79,56 @@ a#check {
   border: 1px solid blue;
   border-radius: 4px;
 }
+
+table#candidates td {
+  padding: 15px;
+  border-bottom: 1px solid #000;
+}
+
+table#candidates td.source, table#candidates td.norm_id, table#candidates td.dbid {
+  display: none;
+}
+
+.verify button {
+  cursor: pointer;
+  background: #4a4;
+  color: #000;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.verify button.verified, button.done {
+  background: #004;
+  color: #fff;
+}
+
+button.done {
+  cursor: pointer;
+  margin-left: 16%;
+  font-size: 20pt;
+  padding: 5pt;
+  margin-top: 7pt;
+}
+
+form.search {
+  border: 2px solid #ccc;
+}
+
+form.search .form-group {
+  display: inline-block;
+}
+
+.form-group > * {
+  display: block;
+  margin: 10px;
+  font-size: 14pt;
+  padding: 6px;
+}
+
+.form-group input.button {
+  cursor: pointer;
+  font-size: 15pt;
+  padding: 5pt;
+  background-color: #004;
+  color: #fff;
+}

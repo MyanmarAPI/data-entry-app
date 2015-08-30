@@ -1,0 +1,60 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    h2 Verify Candidates
+    form.search(action="/verify", method="GET")
+      .form-group
+        label Constituency Name
+        input#con_name(type="text", name="constituency", value=constituency)
+      .form-group
+        label Constituency Number (or 0)
+        input#con_number(type="text", name="constituency_number", value=constituency_number)
+      .form-group
+        input.button(type="submit", value="Search")
+
+    if candidates
+      table#candidates
+        thead
+          td.source source
+          td.dbid= dbid
+          td.norm_id norm_id
+          th.name Name
+          th.natid National ID
+          th.house House
+          th.verify
+        for candidate in candidates
+          tr
+            td.source= candidate.source
+            td.dbid= candidate.id
+            td.norm_id= candidate.norm_national_id
+            td.name= candidate.full_name
+            td
+              span (
+              span.natid= candidate.national_id
+              span )
+            td.house
+              if candidate.house
+                span= candidate.house
+              else
+                select
+                  option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
+                  option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
+                  option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+            td.verify
+              a(href="#")
+                if candidate.verified === 1
+                  button.verified Remove?
+                else
+                  button Verify
+      span.verified 0
+      span /
+      span.total
+      span &nbsp;verified:
+      button.done Complete Verify
+
+  script(type="text/javascript", src="/scripts/myanmar.names.js")
+  script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
+  script(type="text/javascript", src="/scripts/verify.js")

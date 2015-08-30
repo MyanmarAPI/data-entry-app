@@ -104,11 +104,11 @@ app.get('/form/:id', function (req, res) {
 });
 
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 40', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 60 OFFSET 40', function(err, rows) {
     if (err) {
       return res.json(err);
     }
-    var final_entry = rows[Math.floor(Math.random() * 40)];
+    var final_entry = rows[Math.floor(Math.random() * 80)];
 
     if (!final_entry.norm_national_id.match(/\d\d/)) {
       // not a valid ID
@@ -195,7 +195,7 @@ app.post('/errors/:final_entry_id/:consensus_form_id/:form_id', isLoggedIn, func
     }
 
     // console.log('UPDATE consensus_forms SET ' + update_statements.join(',') + ' WHERE id = ?');
-    db.run('UPDATE consensus_forms SET ' + update_statements.join(',') + ' WHERE id = ?', req.params.final_entry_id, function (err) {
+    db.run('UPDATE consensus_forms SET ' + update_statements.join(',') + ' WHERE id = ?', req.params.consensus_form_id, function (err) {
       if (err) {
         return res.json(err);
       }
@@ -403,7 +403,7 @@ app.get("/admin", function(req, res) {
   db.get("SELECT COUNT(*) AS total FROM entries", function(err, r1) {
     db.get("SELECT COUNT(*) AS total FROM consensus_forms", function(err, r2) {
       db.get("SELECT COUNT(DISTINCT(form_id)) AS total FROM entries", function(err, r3) {
-        db.get("SELECT COUNT(*) FROM consensus_forms WHERE form_id > 0", function(err, r4) {
+        db.get("SELECT COUNT(*) AS total FROM consensus_forms WHERE form_id > 0", function(err, r4) {
           res.render('admin', {
             entries: r1.total,
             consensus_forms: r2.total,
@@ -530,7 +530,7 @@ app.get('/entries/:username', function(req, res) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
-    if (!rows.length) {
+    if (!user) {
       return res.json({ status: 'done', error: 'no user with that username' });
     }
     db.all('SELECT id, full_name, saved FROM entries WHERE user_id = ' + user.id + ' ORDER BY saved DESC LIMIT 20', function(err, rows) {
@@ -637,6 +637,88 @@ app.get('/scancfix', function (req, res) {
 var upper = require("./data/upper_house.json");
 var lower = require("./data/lower_house.json");
 
+app.get('/verify', function(req, res) {
+  var constituency = req.query.constituency;
+  var constituency_number = myanmarNumbers(req.query.constituency_number + '');
+
+  if (!constituency) {
+    return res.render('verify');
+  } else {
+    constituency += '%';
+  }
+
+  if (constituency_number && constituency_number * 1) {
+    db.all("SELECT id, full_name, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND constituency_number = ? UNION SELECT id, full_name, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND constituency_number = ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency, constituency_number], function (err, candidates) {
+      if (err) {
+        throw err;
+        return res.send(err);
+      }
+      if (candidates.length === 200) {
+        return res.send('over 200 candidates');
+      }
+      res.render('verify', {
+        candidates: candidates,
+        constituency: constituency.substring(0, constituency.length - 1),
+        constituency_number: constituency_number
+      });
+    });
+  } else {
+    db.all("SELECT id, full_name, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
+      if (err) {
+        throw err;
+        return res.send(err);
+      }
+      if (candidates.length === 200) {
+        return res.send('over 200 candidates');
+      }
+      res.render('verify', {
+        candidates: candidates,
+        constituency: constituency.substring(0, constituency.length - 1),
+        constituency_number: constituency_number
+      });
+    });
+  }
+});
+
+app.post('/verified', function(req, res) {
+  var verified = (req.body.verified || []).map(normalizeNatId).map(function(id) {
+    return "'" + id + "'";
+  });
+  var unverified = (req.body.unverified || []).map(normalizeNatId).map(function(id) {
+    return "'" + id + "'";
+  });
+  db.run('UPDATE consensus_forms SET verified = 1 WHERE ' + nat_id_sql + ' IN (' + verified.join(',') + ')', function (err) {
+    if (err) {
+      return res.json({ err: err });
+    }
+    db.run('UPDATE entries SET verified = 1 WHERE ' + nat_id_sql + ' IN (' + verified.join(',') + ')', function (err) {
+      if (err) {
+        return res.json({ err: err });
+      }
+      db.run('UPDATE consensus_forms SET verified = 0 WHERE ' + nat_id_sql + ' IN (' + unverified.join(',') + ')', function (err) {
+        if (err) {
+          return res.json({ err: err });
+        }
+        db.run('UPDATE entries SET verified = 0 WHERE ' + nat_id_sql + ' IN (' + unverified.join(',') + ')', function (err) {
+          if (err) {
+            return res.json({ err: err });
+          }
+          res.json({ success: "success" });
+          for (var house in req.body.houses) {
+            var houseids = req.body.houses[house].map(normalizeNatId).map(function(id) {
+              return "'" + id + "'";
+            });
+            if (houseids.length) {
+              db.run('UPDATE entries SET house = ? WHERE ' + nat_id_sql + ' IN (' + houseids.join(',') + ')', house);
+              db.run('UPDATE consensus_forms SET house = ? WHERE ' + nat_id_sql + ' IN (' + houseids.join(',') + ')', house);
+            }
+          }
+        });
+      });
+    });
+  });
+});
+
 app.get('/house/:house', function(req, res) {
   var constituencies;
   var processCandidates = function(err, rows) {
@@ -651,14 +733,14 @@ app.get('/house/:house', function(req, res) {
   };
   if (req.params.house === "lower") {
     constituencies = lower;
-    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'ပြည်သူ့လွှတ်တော်' OR house = 'lower' OR house = 'တစ်ဦးချင်း' or constituency_number = 0 ORDER BY constituency_name", processCandidates);
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM consensus_forms WHERE TRIM(house) = 'ပြည်သူ့လွှတ်တော်' OR TRIM(house) = 'lower' OR TRIM(house) = 'တစ်ဦးချင်း' or constituency_number = 0 ORDER BY constituency_name", processCandidates);
   }
   if (req.params.house === "upper") {
     constituencies = upper;
-    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE house = 'အမျိုးသားလွှတ်တော်' OR house = 'upper' OR house = 'ပါတီ' or constituency_number > 2 ORDER BY constituency_name, constituency_number", processCandidates);
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM consensus_forms WHERE TRIM(house) = 'အမျိုးသားလွှတ်တော်' OR TRIM(house) = 'upper' OR TRIM(house) = 'ပါတီ' or constituency_number > 2 ORDER BY constituency_name, constituency_number", processCandidates);
   }
   if (req.params.house === "state") {
-    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM (SELECT * FROM forms INNER JOIN entries ON first_entry_id = entries.id WHERE forms.entries_done AND first_entry_id > 0) WHERE TRIM(house) = 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' OR house = 'state' OR house = 'တိုင်းရင်းသား' ORDER BY constituency_name, constituency_number", processCandidates);
+    db.all("SELECT full_name, national_id, constituency_name, constituency_number FROM consensus_forms WHERE TRIM(house) = 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' OR TRIM(house) = 'state' OR TRIM(house) = 'တိုင်းရင်းသား' ORDER BY constituency_name, constituency_number", processCandidates);
   }
 });
 
