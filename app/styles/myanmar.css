@@ -95,12 +95,19 @@ table#candidates td.address {
   max-width: 300px;
 }
 
-.verify button {
+.verify button, button.findmore {
   cursor: pointer;
   background: #4a4;
   color: #000;
   padding: 8px;
   border-radius: 6px;
+}
+
+.findmore {
+  font-size: 14pt;
+  vertical-align: middle;
+  margin-bottom: 40px;
+  margin-top: 10px;
 }
 
 .verify button.verified, button.done {

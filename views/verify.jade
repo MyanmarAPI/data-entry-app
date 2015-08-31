@@ -2,13 +2,14 @@ doctype html
 html
   head
     meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/autocomplete-0.3.0.min.css")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
     h2 Verify Candidates
     form.search(action="/verify", method="GET")
       .form-group
         label Constituency Name
-        input(type="text", name="constituency", value=constituency)
+        input#conname(type="text", name="constituency", value=constituency)
       .form-group
         label Constituency Number (or 0)
         input#old_con_number(type="hidden", value=constituency_number)
@@ -58,17 +59,16 @@ html
                   option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
                   option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
             td.verify
-              a(href="#")
-                if candidate.verified === 1
-                  button.verified Remove?
-                else
-                  button Verify
-        //
-          tr.header
-            td
-            td
-              input(type="text", value="", placeholder="Find more")
-              button Find
+              if candidate.verified === 1
+                button.verified Remove?
+              else
+                button Verify
+
+      input.findmore(type="text", value="", placeholder="Find more")
+      button.findmore Find
+      br
+      br
+
       span.verified 0
       span /
       span.total
@@ -77,4 +77,5 @@ html
 
   script(type="text/javascript", src="/scripts/myanmar.names.js")
   script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
+  script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
   script(type="text/javascript", src="/scripts/verify.js")
