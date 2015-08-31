@@ -20,6 +20,7 @@ html
           .field
             strong= key
             br
+            input(type="hidden", name="source", value=(entry.source || ''))
             input(name=key, value=entry[key])
             br
         input.clearfix(type="submit", value="Save Changes")

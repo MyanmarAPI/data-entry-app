@@ -2,7 +2,7 @@ $(function () {
   // filter down to candidates with unique IDs
   // prefer consensus_forms
   var known_candidates = [];
-  var candidates = $("tr");
+  var candidates = $("tr").not('.header');
   for (var c = 0; c < candidates.length; c++) {
     var candidate_id = $(candidates[c]).find('td.norm_id').text().replace(/\s/g, '');
     if (known_candidates.indexOf(candidate_id) === -1 && candidate_id.match(/\d\d/)) {
@@ -19,7 +19,7 @@ $(function () {
     return $(candidate).find('td.name').text();
   });
   $("table#candidates").html(candidates);
-  $("span.total").text(candidates.length);
+  $("span.total").text(candidates.length - 1);
 
   $(".verify button").click(function (e) {
     var candidate = $(e.currentTarget).parents("tr")[0];

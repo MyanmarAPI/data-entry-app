@@ -13,28 +13,39 @@ html
         label Constituency Number (or 0)
         input#con_number(type="text", name="constituency_number", value=constituency_number)
       .form-group
+        label House
+        select(name="house", value=house)
+          option(value="") all
+          option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
+          option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
+          option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+      .form-group
         input.button(type="submit", value="Search")
 
     if candidates
       table#candidates
-        thead
+        tr.header
           td.source source
           td.dbid= dbid
           td.norm_id norm_id
           th.name Name
-          th.natid National ID
+          td.natid National ID
+          th.party Party
+          th.address Address
           th.house House
           th.verify
         for candidate in candidates
+          if house && candidate.house
+            if house !== candidate.house && !(house == 'ပြည်သူ့လွှတ်တော်' && candidate.house == 'lower' || house == 'အမျိုးသားလွှတ်တော်' && candidate.house == 'upper' || house == 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' && candidate.house == 'state')
+              - continue
           tr
             td.source= candidate.source
             td.dbid= candidate.id
             td.norm_id= candidate.norm_national_id
             td.name= candidate.full_name
-            td
-              span (
-              span.natid= candidate.national_id
-              span )
+            td.natid= candidate.national_id
+            td.party= candidate.party
+            td.address= candidate.address
             td.house
               if candidate.house
                 span= candidate.house

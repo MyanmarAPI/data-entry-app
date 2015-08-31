@@ -5,7 +5,10 @@ html
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
     for entry in entries
-      - link = "/entry/" + entry.id
+      if entry.source
+        - link = "/" + entry.source + "/" + entry.id
+      else
+        - link = "/entry/" + entry.id
       a(href=link)
         h3= entry.full_name
       span= entry.saved

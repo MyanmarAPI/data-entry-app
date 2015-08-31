@@ -471,12 +471,12 @@ app.get('/candidate/:national_id', function(req, res) {
     }
   };
 
-  db.all("SELECT * FROM consensus_forms WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+  db.all("SELECT *, 'consensus_form' AS source FROM consensus_forms WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
     if (!rows.length) {
-      db.all("SELECT * FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+      db.all("SELECT *, 'entry' AS source FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
@@ -546,7 +546,18 @@ app.get('/entries/:username', function(req, res) {
 });
 
 app.get('/entry/:id', function(req, res) {
-  db.get('SELECT * FROM entries WHERE entries.id = ' + req.params.id, function(err, row) {
+  db.get('SELECT * FROM entries WHERE id = ?', req.params.id, function(err, row) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    res.render('entry', {
+      entry: row
+    });
+  });
+});
+
+app.get('/consensus_form/:id', function(req, res) {
+  db.get('SELECT * FROM consensus_forms WHERE id = ?', req.params.id, function(err, row) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
@@ -604,51 +615,21 @@ app.get('/data-update', function(req, res) {
   res.send('processing new images');
 });
 
-/*
-app.get('/scancfix', function (req, res) {
-  fs.readdir(__dirname + "/app/color_images", function(err, files) {
-    if (err) {
-      return console.log(err);
-    }
-    var changeFiles = [];
-    for (var f = 0; f < files.length; f++) {
-      if (files[f].indexOf("Scan_C") > -1 && files[f].split("_").length === 3) {
-        changeFiles.push(files[f]);
-        fs.rename(__dirname + "/app/color_images/" + files[f], __dirname + "/app/color_images/" + files[f].replace(/_(\d)/, "_0$1").replace("_", "__"), function(err) {
-          console.log(err);
-        });
-      }
-    }
-    res.json(changeFiles);
-    db.all("SELECT id, scan_file FROM forms WHERE scan_file LIKE 'Scan_C_%'", function (err, rows) {
-      if (err) {
-        return console.log(err);
-      }
-      for (var r = 0; r < rows.length; r++) {
-        if (rows[r].scan_image.split("_").length === 3) {
-          db.run("UPDATE forms SET scan_file = ? WHERE id = " + id, rows[r].scan_file.replace(/_(\d)/, "_0$1").replace("_", "__"));
-        }
-      }
-    });
-  });
-});
-*/
-
 var upper = require("./data/upper_house.json");
 var lower = require("./data/lower_house.json");
 
-app.get('/verify', function(req, res) {
+app.get('/verify', isLoggedIn, function(req, res) {
   var constituency = req.query.constituency;
   var constituency_number = myanmarNumbers(req.query.constituency_number + '');
 
   if (!constituency) {
     return res.render('verify');
   } else {
-    constituency += '%';
+    constituency = '%' + constituency + '%';
   }
 
   if (constituency_number && constituency_number * 1) {
-    db.all("SELECT id, full_name, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND constituency_number = ? UNION SELECT id, full_name, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND constituency_number = ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency, constituency_number], function (err, candidates) {
+    db.all("SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR constituency_number = 0) UNION SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR constituency_number = 0) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency, constituency_number], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
@@ -657,13 +638,14 @@ app.get('/verify', function(req, res) {
         return res.send('over 200 candidates');
       }
       res.render('verify', {
+        house: req.query.house,
         candidates: candidates,
         constituency: constituency.substring(0, constituency.length - 1),
         constituency_number: constituency_number
       });
     });
   } else {
-    db.all("SELECT id, full_name, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
+    db.all("SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
@@ -672,6 +654,7 @@ app.get('/verify', function(req, res) {
         return res.send('over 200 candidates');
       }
       res.render('verify', {
+        house: req.query.house,
         candidates: candidates,
         constituency: constituency.substring(0, constituency.length - 1),
         constituency_number: constituency_number
@@ -680,7 +663,7 @@ app.get('/verify', function(req, res) {
   }
 });
 
-app.post('/verified', function(req, res) {
+app.post('/verified', isLoggedIn, function(req, res) {
   var verified = (req.body.verified || []).map(normalizeNatId).map(function(id) {
     return "'" + id + "'";
   });
