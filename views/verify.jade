@@ -8,10 +8,11 @@ html
     form.search(action="/verify", method="GET")
       .form-group
         label Constituency Name
-        input#con_name(type="text", name="constituency", value=constituency)
+        input(type="text", name="constituency", value=constituency)
       .form-group
         label Constituency Number (or 0)
-        input#con_number(type="text", name="constituency_number", value=constituency_number)
+        input#old_con_number(type="hidden", value=constituency_number)
+        input(type="text", name="constituency_number", value=constituency_number)
       .form-group
         label House
         select(name="house", value=house)
@@ -27,6 +28,7 @@ html
         tr.header
           td.source source
           td.dbid= dbid
+          td.constituency_number
           td.norm_id norm_id
           th.name Name
           td.natid National ID
@@ -41,6 +43,7 @@ html
           tr
             td.source= candidate.source
             td.dbid= candidate.id
+            td.constituency_number= candidate.constituency_number
             td.norm_id= candidate.norm_national_id
             td.name= candidate.full_name
             td.natid= candidate.national_id

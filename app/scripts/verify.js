@@ -51,6 +51,7 @@ $(function () {
     // update verified and unverified candidates
     var verified = [];
     var unverified = [];
+    var amended = [];
     $("tr").each(function (i, tr) {
       if (i === 0) {
         return;
@@ -61,6 +62,12 @@ $(function () {
         unverified.push(normid);
       } else {
         verified.push(normid);
+        if ($("#old_con_number").val() && $("#old_con_number").val() != candidate.find('.constituency_number').text()) {
+          amended.push({
+            id: candidate.find(".norm_id").text(),
+            constituency_number: $("#old_con_number").val()
+          });
+        }
       }
     });
 
@@ -71,12 +78,20 @@ $(function () {
       "တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်": []
     };
     $("select").each(function (i, select) {
+      if (i === 0) {
+        return;
+      }
       var candidate = $(select).parents("tr");
       var normid = candidate.find(".norm_id").text();
       houses[$(select).val()].push(normid);
     });
 
-    $.post("/verified", { verified: verified, unverified: unverified, houses: houses }, function (response) {
+    $.post("/verified", {
+      verified: verified,
+      unverified: unverified,
+      houses: houses,
+      amended: amended
+    }, function (response) {
       console.log(response);
       if (response.err) {
         alert("LOG IN - it didn't work");

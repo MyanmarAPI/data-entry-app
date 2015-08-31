@@ -629,7 +629,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
   }
 
   if (constituency_number && constituency_number * 1) {
-    db.all("SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR constituency_number = 0) UNION SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR constituency_number = 0) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency, constituency_number], function (err, candidates) {
+    db.all("SELECT id, full_name, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်')) UNION SELECT id, full_name, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်')) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency, constituency_number], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
@@ -640,7 +640,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
       res.render('verify', {
         house: req.query.house,
         candidates: candidates,
-        constituency: constituency.substring(0, constituency.length - 1),
+        constituency: constituency.substring(1, constituency.length - 1),
         constituency_number: constituency_number
       });
     });
@@ -656,7 +656,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
       res.render('verify', {
         house: req.query.house,
         candidates: candidates,
-        constituency: constituency.substring(0, constituency.length - 1),
+        constituency: constituency.substring(1, constituency.length - 1),
         constituency_number: constituency_number
       });
     });
@@ -687,15 +687,32 @@ app.post('/verified', isLoggedIn, function(req, res) {
             return res.json({ err: err });
           }
           res.json({ success: "success" });
+          var leftoversql = [];
           for (var house in req.body.houses) {
             var houseids = req.body.houses[house].map(normalizeNatId).map(function(id) {
               return "'" + id + "'";
             });
             if (houseids.length) {
-              db.run('UPDATE entries SET house = ? WHERE ' + nat_id_sql + ' IN (' + houseids.join(',') + ')', house);
-              db.run('UPDATE consensus_forms SET house = ? WHERE ' + nat_id_sql + ' IN (' + houseids.join(',') + ')', house);
+              leftoversql.push("UPDATE entries SET house = '" + house + "' WHERE " + nat_id_sql + ' IN (' + houseids.join(',') + ')');
+              leftoversql.push("UPDATE consensus_forms SET house = '" + house + "' WHERE " + nat_id_sql + ' IN (' + houseids.join(',') + ')');
             }
           }
+          if (req.body.amended && req.body.amended.length) {
+            var conids = req.body.amended.map(function(amendment) {
+              return "'" + amendment.id + "'";
+            });
+            leftoversql.push('UPDATE entries SET constituency_number = ' + req.body.amended[0].constituency_number + ' WHERE ' + nat_id_sql + ' IN (' + conids.join(',') + ')');
+            leftoversql.push('UPDATE consensus_forms SET constituency_number = ' + req.body.amended[0].constituency_number + ' WHERE ' + nat_id_sql + ' IN (' + conids.join(',') + ')');
+          }
+          var runsql = function(s) {
+            if (s >= leftoversql.length) {
+              return;
+            }
+            db.run(leftoversql[s], function (err) {
+              runsql(s + 1);
+            });
+          };
+          runsql(0);
         });
       });
     });
