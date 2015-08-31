@@ -31,7 +31,7 @@ html
           td.constituency_number
           td.norm_id norm_id
           th.name Name
-          td.natid National ID
+          th.natid National ID
           th.party Party
           th.address Address
           th.house House
@@ -63,6 +63,12 @@ html
                   button.verified Remove?
                 else
                   button Verify
+        //
+          tr.header
+            td
+            td
+              input(type="text", value="", placeholder="Find more")
+              button Find
       span.verified 0
       span /
       span.total

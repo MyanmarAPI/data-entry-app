@@ -85,7 +85,7 @@ table#candidates td {
   border-bottom: 1px solid #000;
 }
 
-table#candidates td.source, table#candidates td.norm_id, table#candidates td.natid, table#candidates td.dbid,
+table#candidates td.source, table#candidates td.norm_id, table#candidates td.dbid,
 table#candidates td.constituency_number {
   display: none;
 }
