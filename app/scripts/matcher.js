@@ -178,6 +178,7 @@ function queryMatch() {
       // clicking Skip adds this field to unknowns and keeps going
       $("#skip").off("click").click(function() {
         // settle unknown with the one which saw the original form
+        var original = matches[1][key];
         set_fields.push({
           key: key,
           selection: matches[0][key]

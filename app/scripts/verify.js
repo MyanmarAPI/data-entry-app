@@ -75,7 +75,6 @@ $(function () {
       var normid = candidate.find(".norm_id").text();
       houses[$(select).val()].push(normid);
     });
-    console.log(houses);
 
     $.post("/verified", { verified: verified, unverified: unverified, houses: houses }, function (response) {
       console.log(response);
