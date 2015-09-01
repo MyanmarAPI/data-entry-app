@@ -235,6 +235,10 @@ var respondForm = function(res, row, order, matching) {
     matching = [];
   }
 
+  if !(row) {
+    return res.json({});
+  };
+
   // display form to user
   res.json({
     form: {
