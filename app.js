@@ -108,7 +108,7 @@ app.get('/errors', isLoggedIn, function (req, res) {
     if (err) {
       return res.json(err);
     }
-    var final_entry = rows[Math.floor(Math.random() * 80)];
+    var final_entry = rows[Math.floor(Math.random() * rows.length)];
 
     if (!final_entry.norm_national_id.match(/\d\d/)) {
       // not a valid ID

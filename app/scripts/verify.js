@@ -70,7 +70,7 @@ $(function () {
         tr.append($("<td class='name'></td>").text(results[r].full_name));
         tr.append($("<td class='natid'></td>").text(results[r].national_id));
         tr.append($("<td class='party'></td>").text(results[r].party));
-        tr.append($("<td class='address'></td>").text(results[r].perm_address));
+        tr.append($("<td class='address'></td>").text(results[r].address_perm));
 
         if (results[r].house) {
           tr.append($("<td class='house'></td>").text(results[r].house));
@@ -85,7 +85,7 @@ $(function () {
 
         $("table").append(tr);
       }
-      sortCandidates();
+      // sortCandidates();
       $(".verify button").off("click").click(verifyButtonRespond);
     });
   });
