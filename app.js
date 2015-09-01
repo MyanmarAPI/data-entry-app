@@ -235,7 +235,7 @@ var respondForm = function(res, row, order, matching) {
     matching = [];
   }
 
-  if !(row) {
+  if (!row) {
     return res.json({});
   };
 
