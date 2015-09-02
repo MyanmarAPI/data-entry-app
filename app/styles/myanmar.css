@@ -145,3 +145,9 @@ form.search .form-group {
   background-color: #004;
   color: #fff;
 }
+
+#conname {
+  background: url('/images/darrow.png');
+  background-position: right;
+  background-repeat: no-repeat;
+}

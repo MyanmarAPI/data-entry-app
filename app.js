@@ -626,14 +626,14 @@ app.get('/verify', isLoggedIn, function(req, res) {
   var constituency = req.query.constituency;
   var constituency_number = myanmarNumbers(req.query.constituency_number + '');
 
-  if (!constituency) {
+  if (!constituency || constituency_number > 12) {
     return res.render('verify');
   } else {
     constituency = '%' + constituency + '%';
   }
 
   if (constituency_number && constituency_number * 1) {
-    db.all("SELECT id, full_name, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
+    db.all("SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
@@ -649,7 +649,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
       });
     });
   } else {
-    db.all("SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
+    db.all("SELECT id, full_name, form_id, party, address_perm AS address, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, form_id, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);

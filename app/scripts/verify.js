@@ -14,6 +14,9 @@ $(function () {
     }
   }
 
+  var house = $($("select")[0]).attr("value");
+  $($("option[value='" + house + "']")[0]).prop('selected', true);
+
   // sort unique candidates alphabetically
   var sortCandidates = function() {
     candidates = myanmarNameSort($("tr"), function(candidate) {
@@ -67,7 +70,7 @@ $(function () {
         tr.append($("<td class='dbid'></td>").text(results[r].id));
         tr.append($("<td class='constituency_number'></td>").text(results[r].constituency_number));
         tr.append($("<td class='norm_id'></td>").text(results[r].norm_national_id));
-        tr.append($("<td class='name'></td>").text(results[r].full_name));
+        tr.append($("<td class='name'></td>").append($("<a target='_blank'></a>").text(results[r].full_name)));
         tr.append($("<td class='natid'></td>").text(results[r].national_id));
         tr.append($("<td class='party'></td>").text(results[r].party));
         tr.append($("<td class='address'></td>").text(results[r].address_perm));

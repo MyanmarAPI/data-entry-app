@@ -46,7 +46,11 @@ html
             td.dbid= candidate.id
             td.constituency_number= candidate.constituency_number
             td.norm_id= candidate.norm_national_id
-            td.name= candidate.full_name
+            td.name
+              if candidate.form_id && candidate.form_id != 0
+                a(href="/form/#{candidate.form_id}", target="_blank")= candidate.full_name
+              else
+                = candidate.full_name
             td.natid= candidate.national_id
             td.party= candidate.party
             td.address= candidate.address
