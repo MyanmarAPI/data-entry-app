@@ -58,15 +58,27 @@ $(function () {
   updateVerifyCount();
 
   $.getJSON("/constituencies.json", function (constituencies) {
+    /*
     $.each(constituencies, function (i, constituency) {
       $("#conname").append($("<option value='" + constituency + "'>" + constituency + "</option>"));
     });
     var selectcon = $($("select")[1]).attr("value");
     $($("option[value='" + selectcon + "']")[0]).prop('selected', true);
-    /*
-    new AutoComplete($('#conname'), c.concat([]));
-    constituencies = c;
     */
+    ac = new AutoComplete('conname', {
+      lists: [ constituencies.concat([]) ],
+      maxTokenGroups: 1
+    });
+    $("#conname input").on("blur", function (e) {
+      $("form button").attr("disabled", true);
+      setTimeout(function() {
+        $("#connamehold").val( ac.getValue()[0][0].value );
+        $("form button").attr("disabled", false);
+      }, 300);
+    });
+    $("form button").on("click", function (e) {
+      $("#connamehold").val( ac.getValue()[0][0].value );
+    });
   });
 
   var insertRows = function (results) {

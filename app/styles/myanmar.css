@@ -129,6 +129,7 @@ form.search {
 
 form.search .form-group {
   display: inline-block;
+  vertical-align: middle;
 }
 
 .form-group > * {
