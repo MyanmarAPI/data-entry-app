@@ -69,34 +69,52 @@ $(function () {
     */
   });
 
+  var insertRows = function (results) {
+    for (var r = 0; r < results.length; r++) {
+      var tr = $("<tr>");
+      tr.append($("<td class='source'></td>").text(results[r].source));
+      tr.append($("<td class='dbid'></td>").text(results[r].id));
+      tr.append($("<td class='constituency_number'></td>").text(results[r].constituency_number));
+      tr.append($("<td class='norm_id'></td>").text(results[r].norm_national_id));
+      tr.append($("<td class='name'></td>").append($("<a target='_blank'></a>").text(results[r].full_name).attr("href", "/form/" + results[r].form_id)));
+      tr.append($("<td class='natid'></td>").text(results[r].national_id));
+      tr.append($("<td class='party'></td>").text(results[r].party));
+      tr.append($("<td class='address'></td>").text(results[r].constituency_name));
+
+      if (results[r].house) {
+        tr.append($("<td class='house'></td>").text(results[r].house));
+      } else {
+        tr.append($('<td class="house"><select><option value="အမျိုးသားလွှတ်တော်">အမျိုးသားလွှတ်တော်</option><option value="ပြည်သူ့လွှတ်တော်">ပြည်သူ့လွှတ်တော်</option><option value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်">တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်</option></select></td>'));
+      }
+      if (results[r].verified) {
+        tr.append($("<td class='verify'><button class='verified'>Remove?</button></td>").text(results[r].address));
+      } else {
+        tr.append($("<td class='verify'><button>Verify</button></td>").text(results[r].address));
+      }
+
+      $("table").append(tr);
+    }
+  };
+
+  $("button.findname").click(function() {
+    $("button.findname").attr("disabled", true);
+    $.getJSON("/candidatename/" + $("input.findname").val() + "?format=json", function (results) {
+      $("button.findname").attr("disabled", false);
+
+      insertRows(results);
+
+      // sortCandidates();
+      $(".verify button").off("click").click(verifyButtonRespond);
+    });
+  });
+
   $("button.findmore").click(function() {
     $("button.findmore").attr("disabled", true);
     $.getJSON("/candidate/" + $("input.findmore").val().replace("/", "*") + "?format=json", function (results) {
       $("button.findmore").attr("disabled", false);
-      for (var r = 0; r < results.length; r++) {
-        var tr = $("<tr>");
-        tr.append($("<td class='source'></td>").text(results[r].source));
-        tr.append($("<td class='dbid'></td>").text(results[r].id));
-        tr.append($("<td class='constituency_number'></td>").text(results[r].constituency_number));
-        tr.append($("<td class='norm_id'></td>").text(results[r].norm_national_id));
-        tr.append($("<td class='name'></td>").append($("<a target='_blank'></a>").text(results[r].full_name).attr("href", "/form/" + results[r].form_id)));
-        tr.append($("<td class='natid'></td>").text(results[r].national_id));
-        tr.append($("<td class='party'></td>").text(results[r].party));
-        tr.append($("<td class='address'></td>").text(results[r].address_perm));
 
-        if (results[r].house) {
-          tr.append($("<td class='house'></td>").text(results[r].house));
-        } else {
-          tr.append($('<td class="house"><select><option value="အမျိုးသားလွှတ်တော်">အမျိုးသားလွှတ်တော်</option><option value="ပြည်သူ့လွှတ်တော်">ပြည်သူ့လွှတ်တော်</option><option value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်">တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်</option></select></td>'));
-        }
-        if (results[r].verified) {
-          tr.append($("<td class='verify'><button class='verified'>Remove?</button></td>").text(results[r].address));
-        } else {
-          tr.append($("<td class='verify'><button>Verify</button></td>").text(results[r].address));
-        }
+      insertRows(results);
 
-        $("table").append(tr);
-      }
       // sortCandidates();
       $(".verify button").off("click").click(verifyButtonRespond);
     });

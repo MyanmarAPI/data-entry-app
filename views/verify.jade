@@ -9,19 +9,19 @@ html
     h2 Verify Candidates
     form.search(action="/verify", method="GET")
       .form-group
-        label Constituency Name
-        select#conname(name="constituency", value=constituency)
-      .form-group
-        label Constituency Number (or 0)
-        input#old_con_number(type="hidden", value=constituency_number)
-        input(type="text", name="constituency_number", value=constituency_number)
-      .form-group
         label House
         select(name="house", value=house)
           option(value="") all
           option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
           option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
           option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+      .form-group
+        label Constituency Name
+        select#conname(name="constituency", value=constituency)
+      .form-group
+        label Constituency Number (or 0)
+        input#old_con_number(type="hidden", value=constituency_number)
+        input(type="text", name="constituency_number", value=constituency_number)
       .form-group
         input.button(type="submit", value="Search")
 
@@ -30,12 +30,12 @@ html
         tr.header
           td.source source
           td.dbid= dbid
-          td.constituency_number
+          th.constituency_number
           td.norm_id norm_id
           th.name Name
           th.natid National ID
           th.party Party
-          th.address Address
+          th.address Constituency
           th.house House
           th.verify
         for candidate in candidates
@@ -54,7 +54,7 @@ html
                 = candidate.full_name
             td.natid= candidate.national_id
             td.party= candidate.party
-            td.address= candidate.address
+            td.address= candidate.constituency_name
             td.house
               if candidate.house
                 span= candidate.house
@@ -69,7 +69,9 @@ html
               else
                 button Verify
 
-      input.findmore(type="text", value="", placeholder="Find more")
+      input.findname(type="text", value="", placeholder="Find name")
+      button.findname Find by Name
+      input.findmore(type="text", value="", placeholder="Find ID")
       button.findmore Find by ID
       br
       br

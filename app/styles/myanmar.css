@@ -85,8 +85,7 @@ table#candidates td {
   border-bottom: 1px solid #000;
 }
 
-table#candidates td.source, table#candidates td.norm_id, table#candidates td.dbid,
-table#candidates td.constituency_number {
+table#candidates td.source, table#candidates td.norm_id, table#candidates td.dbid {
   display: none;
 }
 
@@ -95,15 +94,16 @@ table#candidates td.address {
   max-width: 300px;
 }
 
-.verify button, button.findmore {
+.verify button, button.findmore, button.findname {
   cursor: pointer;
   background: #4a4;
   color: #000;
   padding: 8px;
   border-radius: 6px;
+  margin-right: 22px;
 }
 
-.findmore {
+.findmore, .findname {
   font-size: 14pt;
   vertical-align: middle;
   margin-bottom: 40px;

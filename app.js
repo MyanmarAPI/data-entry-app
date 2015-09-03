@@ -108,7 +108,7 @@ app.get('/form/:id', function (req, res) {
 });
 
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 300', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 380', function(err, rows) {
     if (err) {
       return res.json(err);
     }
@@ -435,35 +435,6 @@ app.get('/candidate', function(req, res) {
   res.redirect('/candidate/' + req.query.serial);
 });
 
-app.get('/suggestcandidate/:national_id', function(req, res) {
-  var norm_number = normalizeNatId(myanmarNumbers(req.params.national_id))
-
-  var respondCandidates = function(rows) {
-      var list=[];
-      rows.forEach(function(row){
-          list.push(row.national_id);
-      });
-      res.json({ status: 'ok', data: list });
-  };
-
-  db.all("SELECT national_id FROM consensus_forms WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
-    if (err) {
-      return res.json({ status: 'error', error: err });
-    }
-    if (!rows.length) {
-      db.all("SELECT national_id FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC", function(err, rows) {
-        if (err) {
-          return res.json({ status: 'error', error: err });
-        }
-        respondCandidates(rows);
-      });
-    } else {
-      // candidates match national id
-      respondCandidates(rows);
-    }
-  });
-});
-
 app.get('/candidate/:national_id', function(req, res) {
   var national_id = req.params.national_id.replace('*','/');
   var norm_number = normalizeNatId(myanmarNumbers(national_id));
@@ -485,6 +456,38 @@ app.get('/candidate/:national_id', function(req, res) {
     }
     if (!rows.length) {
       db.all("SELECT *, 'entry' AS source FROM entries WHERE " + nat_id_sql + " LIKE '" + norm_number + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+        if (err) {
+          return res.json({ status: 'error', error: err });
+        }
+        respondCandidates(rows);
+      });
+    } else {
+      // candidates match national id
+      respondCandidates(rows);
+    }
+  });
+});
+
+app.get('/candidatename/:name', function(req, res) {
+  var name = normalizeNatId(req.params.name);
+
+  var respondCandidates = function(rows) {
+    if (req.query.format === 'json') {
+      res.json(rows);
+    } else {
+      rows = fixDates(rows);
+      res.render('entries', {
+        entries: rows
+      });
+    }
+  };
+
+  db.all("SELECT *, 'consensus_form' AS source FROM consensus_forms WHERE " + full_name_sql + " LIKE '" + name + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
+    if (err) {
+      return res.json({ status: 'error', error: err });
+    }
+    if (!rows.length) {
+      db.all("SELECT *, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE '" + name + "%' ORDER BY saved DESC LIMIT 0,20", function(err, rows) {
         if (err) {
           return res.json({ status: 'error', error: err });
         }
@@ -529,26 +532,6 @@ app.get('/entries.csv', function(req, res) {
       }
       res.send(data);
       res.end();
-    });
-  });
-});
-
-app.get('/entries/:username', function(req, res) {
-  db.get('SELECT * FROM users WHERE username = ?', req.params.username, function(err, user) {
-    if (err) {
-      return res.json({ status: 'error', error: err });
-    }
-    if (!user) {
-      return res.json({ status: 'done', error: 'no user with that username' });
-    }
-    db.all('SELECT id, full_name, saved FROM entries WHERE user_id = ' + user.id + ' ORDER BY saved DESC LIMIT 20', function(err, rows) {
-      if (err) {
-        return res.json({ status: 'error', error: err });
-      }
-      rows = fixDates(rows);
-      res.render('entries', {
-        entries: rows
-      });
     });
   });
 });
@@ -637,7 +620,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
   }
 
   if (constituency_number && constituency_number * 1) {
-    db.all("SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
+    db.all("SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, verified, house, form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
@@ -653,7 +636,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
       });
     });
   } else {
-    db.all("SELECT id, full_name, form_id, party, address_perm AS address, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, form_id, party, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
+    db.all("SELECT id, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, verified, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? UNION SELECT id, full_name, form_id, party, constituency_name, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);
