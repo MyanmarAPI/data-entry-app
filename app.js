@@ -99,12 +99,16 @@ app.get('/names', function (req, res) {
 // error fixer - data should be relatively complete
 app.get('/form/:id', function (req, res) {
   db.get('SELECT scan_file FROM forms WHERE id = ?', req.params.id, function (err, form) {
-    res.redirect(form.scan_file);
+    if (form) {
+      res.redirect(form.scan_file);
+    } else {
+      res.redirect('http://google.com');
+    }
   });
 });
 
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 220', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 300', function(err, rows) {
     if (err) {
       return res.json(err);
     }
