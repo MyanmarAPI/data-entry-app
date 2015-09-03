@@ -14,7 +14,7 @@ $(function () {
     }
   }
 
-  var house = $($("select")[0]).attr("value");
+  var house = $($("select")[1]).attr("value");
   $($("option[value='" + house + "']")[0]).prop('selected', true);
 
   // sort unique candidates alphabetically
@@ -58,7 +58,15 @@ $(function () {
   updateVerifyCount();
 
   $.getJSON("/constituencies.json", function (constituencies) {
-    new AutoComplete('conname', constituencies);
+    $.each(constituencies, function (i, constituency) {
+      $("#conname").append($("<option value='" + constituency + "'>" + constituency + "</option>"));
+    });
+    var selectcon = $($("select")[0]).attr("value");
+    $($("option[value='" + selectcon + "']")[0]).prop('selected', true);
+    /*
+    new AutoComplete($('#conname'), c.concat([]));
+    constituencies = c;
+    */
   });
 
   $("button.findmore").click(function() {
@@ -71,7 +79,7 @@ $(function () {
         tr.append($("<td class='dbid'></td>").text(results[r].id));
         tr.append($("<td class='constituency_number'></td>").text(results[r].constituency_number));
         tr.append($("<td class='norm_id'></td>").text(results[r].norm_national_id));
-        tr.append($("<td class='name'></td>").append($("<a target='_blank'></a>").text(results[r].full_name)));
+        tr.append($("<td class='name'></td>").append($("<a target='_blank'></a>").text(results[r].full_name).attr("href", "/form/" + results[r].form_id)));
         tr.append($("<td class='natid'></td>").text(results[r].national_id));
         tr.append($("<td class='party'></td>").text(results[r].party));
         tr.append($("<td class='address'></td>").text(results[r].address_perm));
@@ -125,7 +133,7 @@ $(function () {
       "တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်": []
     };
     $("select").each(function (i, select) {
-      if (i === 0) {
+      if (i < 2) {
         return;
       }
       var candidate = $(select).parents("tr");

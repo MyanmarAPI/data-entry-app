@@ -104,7 +104,7 @@ app.get('/form/:id', function (req, res) {
 });
 
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 60 OFFSET 40', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 220', function(err, rows) {
     if (err) {
       return res.json(err);
     }
@@ -633,7 +633,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
   }
 
   if (constituency_number && constituency_number * 1) {
-    db.all("SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, '0' AS form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
+    db.all("SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, full_name, form_id, party, constituency_number, address_perm AS address, national_id, norm_national_id, verified, house, form_id, 'entry' AS source FROM entries WHERE constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC LIMIT 200", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
       if (err) {
         throw err;
         return res.send(err);

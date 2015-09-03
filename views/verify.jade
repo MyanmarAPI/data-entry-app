@@ -2,14 +2,15 @@ doctype html
 html
   head
     meta(charset="utf-8")
-    link(rel="stylesheet", type="text/css", href="/styles/autocomplete-0.3.0.min.css")
+    //
+      link(rel="stylesheet", type="text/css", href="/styles/autocomplete-0.3.0.min.css")
     link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
   body
     h2 Verify Candidates
     form.search(action="/verify", method="GET")
       .form-group
         label Constituency Name
-        input#conname(type="text", name="constituency", value=constituency)
+        select#conname(name="constituency", value=constituency)
       .form-group
         label Constituency Number (or 0)
         input#old_con_number(type="hidden", value=constituency_number)
@@ -81,5 +82,6 @@ html
 
   script(type="text/javascript", src="/scripts/myanmar.names.js")
   script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
-  script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
+  //
+    script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
   script(type="text/javascript", src="/scripts/verify.js")
