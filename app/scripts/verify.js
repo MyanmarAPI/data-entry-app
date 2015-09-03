@@ -87,7 +87,7 @@ $(function () {
         tr.append($('<td class="house"><select><option value="အမျိုးသားလွှတ်တော်">အမျိုးသားလွှတ်တော်</option><option value="ပြည်သူ့လွှတ်တော်">ပြည်သူ့လွှတ်တော်</option><option value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်">တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်</option></select></td>'));
       }
       if (results[r].verified) {
-        tr.append($("<td class='verify'><button class='verified'>Remove?</button></td>").text(results[r].address));
+        tr.append($("<td class='verify'><button class='verified'>Verified</button></td>").text(results[r].address));
       } else {
         tr.append($("<td class='verify'><button>Verify</button></td>").text(results[r].address));
       }
@@ -131,14 +131,16 @@ $(function () {
       }
       var candidate = $(tr);
       var normid = candidate.find(".norm_id").text();
-      if (candidate.find("button").text() === "Verify") {
+      var buttontext = candidate.find("button").text();
+      if (buttontext === "Verify") {
         unverified.push(normid);
-      } else {
+      } else if (buttontext.indexOf("Remove") > -1) {
         verified.push(normid);
-        if ($("#old_con_number").val() && $("#old_con_number").val() != candidate.find('.constituency_number').text()) {
+        if (($("#old_con_number").val() && $("#old_con_number").val() != candidate.find('.constituency_number').text()) || ($("#old_con_name").val() && candidate.find('.constituency').text().indexOf($("#old_con_name").val()) === -1)) {
           amended.push({
             id: candidate.find(".norm_id").text(),
-            constituency_number: $("#old_con_number").val()
+            constituency_name: $("#old_con_name").val(),
+            constituency_number: $("#old_con_number").val() * 1 || candidate.find('.constituency_number').text()
           });
         }
       }

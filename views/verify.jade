@@ -21,6 +21,7 @@ html
       .form-group
         label Constituency Number (or 0)
         input#old_con_number(type="hidden", value=constituency_number)
+        input#old_con_name(type="hidden", value=constituency)
         input(type="text", name="constituency_number", value=constituency_number)
       .form-group
         input.button(type="submit", value="Search")
@@ -65,7 +66,7 @@ html
                   option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
             td.verify
               if candidate.verified === 1
-                button.verified Remove?
+                button.verified Verified
               else
                 button Verify
 

@@ -690,10 +690,10 @@ app.post('/verified', isLoggedIn, function(req, res) {
           }
           if (req.body.amended && req.body.amended.length) {
             var conids = req.body.amended.map(function(amendment) {
-              return "'" + amendment.id + "'";
+              return "'" + normalizeNatId(amendment.id) + "'";
             });
-            leftoversql.push('UPDATE entries SET constituency_number = ' + req.body.amended[0].constituency_number + ' WHERE ' + nat_id_sql + ' IN (' + conids.join(',') + ')');
-            leftoversql.push('UPDATE consensus_forms SET constituency_number = ' + req.body.amended[0].constituency_number + ' WHERE ' + nat_id_sql + ' IN (' + conids.join(',') + ')');
+            leftoversql.push('UPDATE entries SET constituency_number = ' + req.body.amended[0].constituency_number + ", constituency_name = '" + req.body.amended[0].constituency_name + "' WHERE " + nat_id_sql + ' IN (' + conids.join(',') + ')');
+            leftoversql.push('UPDATE consensus_forms SET constituency_number = ' + req.body.amended[0].constituency_number + ", constituency_name = '" + req.body.amended[0].constituency_name + "' WHERE " + nat_id_sql + ' IN (' + conids.join(',') + ')');
           }
           var runsql = function(s) {
             if (s >= leftoversql.length) {
