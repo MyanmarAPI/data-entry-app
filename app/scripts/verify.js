@@ -27,6 +27,7 @@ $(function () {
 
   candidates = $("tr");
   $("span.total").text(candidates.length - 1);
+  sortCandidates();
 
   var verifyButtonRespond = function(e) {
     var candidate = $(e.currentTarget).parents("tr")[0];
