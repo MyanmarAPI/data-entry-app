@@ -165,7 +165,7 @@ $(function () {
       "တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်": []
     };
     $("select").each(function (i, select) {
-      if (i < 2) {
+      if (i < 1) {
         return;
       }
       var candidate = $(select).parents("tr");

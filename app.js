@@ -108,7 +108,7 @@ app.get('/form/:id', function (req, res) {
 });
 
 app.get('/errors', isLoggedIn, function (req, res) {
-  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 380', function(err, rows) {
+  db.all('SELECT * FROM entries WHERE finalized = 1 AND form_id > 0 ORDER BY saved DESC LIMIT 80 OFFSET 460', function(err, rows) {
     if (err) {
       return res.json(err);
     }
