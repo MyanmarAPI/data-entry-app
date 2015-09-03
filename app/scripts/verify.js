@@ -14,7 +14,7 @@ $(function () {
     }
   }
 
-  var house = $($("select")[1]).attr("value");
+  var house = $($("select")[0]).attr("value");
   $($("option[value='" + house + "']")[0]).prop('selected', true);
 
   // sort unique candidates alphabetically
@@ -61,7 +61,7 @@ $(function () {
     $.each(constituencies, function (i, constituency) {
       $("#conname").append($("<option value='" + constituency + "'>" + constituency + "</option>"));
     });
-    var selectcon = $($("select")[0]).attr("value");
+    var selectcon = $($("select")[1]).attr("value");
     $($("option[value='" + selectcon + "']")[0]).prop('selected', true);
     /*
     new AutoComplete($('#conname'), c.concat([]));
