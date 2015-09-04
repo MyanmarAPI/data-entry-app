@@ -615,7 +615,7 @@ app.get('/verify', isLoggedIn, function(req, res) {
 
   if (!constituency || constituency_number > 12) {
     return res.render('verify');
-  } else if (constituency === 'ပြည်') {
+  } else if (constituency === 'ပြည်' || constituency === 'မကွေး') {
     constituency += '%';
   } else {
     constituency = '%' + constituency + '%';
