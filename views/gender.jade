@@ -1,0 +1,18 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    h1= person.full_name
+
+    form(action="/gender", method="POST", style="display: inline-block;")
+      input(type="hidden", name="norm_national_id", value=person.norm_national_id)
+      input(type="hidden", name="gender", value="M")
+      input.button(type="submit", value="လူကို")
+    form(action="/gender", method="POST", style="display: inline-block;")
+      input(type="hidden", name="norm_national_id", value=person.norm_national_id)
+      input(type="hidden", name="gender", value="F")
+      input.button(type="submit", value="မ")
+
+    img(src="/form/#{person.form_id}", width="700", style="float: right")

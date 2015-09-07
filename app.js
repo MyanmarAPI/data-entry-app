@@ -522,16 +522,38 @@ app.get('/entries.json', function(req, res) {
 });
 
 app.get('/entries.csv', function(req, res) {
-  db.all('SELECT * FROM entries ORDER BY saved', function(err, rows) {
+  db.all('SELECT TRIM(full_name) AS name, national_id, house, constituency_name, constituency_number, ward_village, voter_list_number,  party, dob, nationality, religion, education, occupation, gender, address_perm, address_mail, mother, mother_id, mother_religion, mother_ethnicity, father, father_id, father_religion, father_ethnicity, saved FROM entries UNION SELECT TRIM(full_name) AS name, national_id, house, constituency_name, constituency_number, ward_village, voter_list_number, party, dob, nationality, religion, education, occupation, gender, address_perm, address_mail, mother, mother_id, mother_religion, mother_ethnicity, father, father_id, father_religion, father_ethnicity, saved FROM consensus_forms ORDER BY name, national_id, saved ASC',
+   function(err, rows) {
     if (err) {
       return res.json({ status: 'error', error: err });
     }
-    csv.writeToString(rows, { headers: true }, function(err, data){
+    res.json(rows.length);
+    csv.writeToStream(fs.createWriteStream('output.csv'), rows, { headers: true });
+  });
+});
+
+app.get('/gender', function(req, res) {
+  db.all("SELECT 'entry' AS source, norm_national_id, full_name, form_id FROM entries WHERE gender = '' AND form_id != 0 AND form_id IS NOT NULL AND form_id != '' LIMIT 10", function(err, row) {
+    row.sort(function() {
+      return Math.random() - 0.5;
+    });
+    res.render('gender', {
+      person: row[0]
+    });
+  });
+});
+
+app.post('/gender', function(req, res) {
+  var natid = normalizeNatId(req.body.norm_national_id);
+  db.run('UPDATE entries SET gender = ? WHERE ' + nat_id_sql + ' = ?', [req.body.gender, natid], function (err) {
+    if (err) {
+      return res.json(err);
+    }
+    db.run('UPDATE consensus_forms SET gender = ? WHERE ' + nat_id_sql + ' = ?', [req.body.gender, natid], function (err) {
       if (err) {
-        return res.json({ status: 'error', error: err });
+        return res.json(err);
       }
-      res.send(data);
-      res.end();
+      res.redirect('/gender');
     });
   });
 });

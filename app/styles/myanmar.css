@@ -47,12 +47,16 @@ html, body, span, strong {
   vertical-align: middle;
 }
 
-#comparer button {
+#comparer button, input.button {
   padding: 6px;
   margin: 12px;
   background: #303f9f;
   color: #fff;
   display: block;
+}
+
+input.button {
+  font-size: 18pt;
 }
 
 button#correct, button#skip {
