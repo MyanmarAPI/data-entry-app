@@ -151,6 +151,10 @@ form.search .form-group {
   color: #fff;
 }
 
+td.hide {
+  display: none;
+}
+
 /*
 #conname {
   background: url('/images/darrow.png');

@@ -8,9 +8,11 @@ $(function () {
   var missing_links = {};
   for (var c = 0; c < candidates.length; c++) {
     var candidate_id = $(candidates[c]).find('td.norm_id').text().replace(/\s/g, '');
-    if (known_candidates.indexOf(candidate_id) === -1 && candidate_id.match(/\d\d/)) {
+    var candidate_name = $(candidates[c]).find('td.name').text();
+    if (known_candidates.indexOf(candidate_id) === -1 && known_candidates.indexOf(candidate_name) === -1 && candidate_id.match(/\d\d/)) {
       // new candidate with valid ID
       known_candidates.push(candidate_id);
+      known_candidates.push(candidate_name);
       if ($(candidates[c]).find('a').length === 0) {
         // no link
         missing_links[candidate_id] = $(candidates[c]);

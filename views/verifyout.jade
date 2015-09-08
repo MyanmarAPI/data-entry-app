@@ -36,51 +36,78 @@ html
           th.constituency_number
           td.norm_id norm_id
           th.name Name
-          th.natid National ID
+          th.gender Gender
+          td.natid.hide National ID
           th.party Party
           th.address Constituency
+          th.ward Ward/Village
+          th.vln VoterListNum
           th.house House
           th.state State
+          th.ethnicity Ethnicity
+          th.religion Religion
+          th.occupation Occupation
+          th.education Education
+          th.dob Birthdate
+          th.mother Mother
+          th.father Father
         for candidate in candidates
           if house && candidate.house
             if house !== candidate.house && !(house == 'ပြည်သူ့လွှတ်တော်' && candidate.house == 'lower' || house == 'အမျိုးသားလွှတ်တော်' && candidate.house == 'upper' || house == 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' && candidate.house == 'state')
               - continue
           tr
             td.source= candidate.source
+              span ,
             td.dbid= candidate.id
             td.constituency_number= candidate.constituency_number
+              span ,
             td.norm_id= candidate.norm_national_id
             td.name
               if candidate.form_id && candidate.form_id != 0
                 a(href="/form/#{candidate.form_id}", target="_blank")= candidate.full_name
               else
                 = candidate.full_name
-            td.natid= candidate.national_id
+              span ,
+            td.gender= candidate.gender
+              span ,
+            td.natid.hide= candidate.national_id
             td.party= candidate.party
+              span ,
             td.address= candidate.constituency_name
+              span ,
+            td.ward= candidate.ward_village
+              span ,
+            td.vln= candidate.voter_list_number
+              span ,
             td.house
               if candidate.house
                 span= candidate.house
-              else
-                select
-                  option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
-                  option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
-                  option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+              span ,
             td.state= candidate.state
-
-      input.findname(type="text", value="", placeholder="Find name")
-      button.findname Find by Name
-      input.findmore(type="text", value="", placeholder="Find ID")
-      button.findmore Find by ID
-      br
-      br
-
-      span.verified 0
-      span /
-      span.total
-      span &nbsp;verified:
-      button.done Complete Verify
-
+              span ,
+            td.ethnicity= candidate.nationality
+              span ,
+            td.religion= candidate.religion
+              span ,
+            td.occupation= candidate.occupation
+              span ,
+            td.education= candidate.education
+              span ,
+            td.dob= candidate.dob
+              span ,
+            td.mother
+              span= candidate.mother
+              span ,
+              span= candidate.mother_nationality
+              span ,
+              span= candidate.mother_religion
+              span ,
+            td.father
+              span= candidate.father
+              span ,
+              span= candidate.father_nationality
+              span ,
+              span= candidate.father_religion
   script(type="text/javascript", src="/scripts/myanmar.names.js")
   script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
   script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
