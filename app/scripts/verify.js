@@ -3,51 +3,52 @@ var missing_link = false;
 $(function () {
   // filter down to candidates with unique IDs
   // prefer consensus_forms
-  var known_candidates = [];
-  var candidates = $("tr").not('.header');
-  var missing_links = {};
-  for (var c = 0; c < candidates.length; c++) {
-    var candidate_id = $(candidates[c]).find('td.norm_id').text().replace(/\s/g, '');
-    var candidate_name = $(candidates[c]).find('td.name').text();
-    if (known_candidates.indexOf(candidate_id) === -1 && known_candidates.indexOf(candidate_name) === -1 && candidate_id.match(/\d\d/)) {
-      // new candidate with valid ID
-      known_candidates.push(candidate_id);
-      known_candidates.push(candidate_name);
-      if ($(candidates[c]).find('a').length === 0) {
-        // no link
-        missing_links[candidate_id] = $(candidates[c]);
-      }
-    } else {
-      // repeat (consensus_forms come first, so this could be an old entry copy)
-      if (missing_links[candidate_id] && $(candidates[c]).find('a').length > 0) {
+  $("table").each(function(t, tab) {
+      var table = $(tab);
+	  var known_candidates = [];
+	  var candidates = table.find("tr").not('.header');
+	  var missing_links = {};
+	  for (var c = 0; c < candidates.length; c++) {
+		var candidate_id = $(candidates[c]).find('td.norm_id').text().replace(/\s/g, '');
+		var candidate_name = $(candidates[c]).find('td.name').text();
+		if (known_candidates.indexOf(candidate_id) === -1 && known_candidates.indexOf(candidate_name) === -1 && candidate_id.match(/\d\d/)) {
+		  // new candidate with valid ID
+		  known_candidates.push(candidate_id);
+		  known_candidates.push(candidate_name);
+		  if ($(candidates[c]).find('a').length === 0) {
+			// no link
+			missing_links[candidate_id] = $(candidates[c]);
+		  }
+		} else {
+		  // repeat (consensus_forms come first, so this could be an old entry copy)
+		  if (missing_links[candidate_id] && $(candidates[c]).find('a').length > 0) {
 
-        missing_links[candidate_id].find('td.name').html(
-          $("<a>link</a>")
-            .attr("href", 
-              $(candidates[c]).find('a').attr('href')
-            )
-            .text( missing_links[candidate_id].find('td.name').text() )
-        );
-        missing_links[candidate_id] = null;
-      }
-      $(candidates[c]).remove();
-    }
-  }
+			missing_links[candidate_id].find('td.name').html(
+			  $("<a>link</a>")
+				.attr("href", 
+				  $(candidates[c]).find('a').attr('href')
+				)
+				.text( missing_links[candidate_id].find('td.name').text() )
+			);
+			missing_links[candidate_id] = null;
+		  }
+		  $(candidates[c]).remove();
+		}
+	  }
+	  
+	  // sort unique candidates alphabetically
+	  var sortCandidates = function() {
+		candidates = myanmarNameSort(table.find("tr"), function(candidate) {
+		  return $(candidate).find('td.name').text();
+		});
+		table.html(candidates);
+	  };
+	  sortCandidates();
+  
+  });
 
   var house = $($("select")[0]).attr("value");
   $($("option[value='" + house + "']")[0]).prop('selected', true);
-
-  // sort unique candidates alphabetically
-  var sortCandidates = function() {
-    candidates = myanmarNameSort($("tr"), function(candidate) {
-      return $(candidate).find('td.name').text();
-    });
-    $("table#candidates").html(candidates);
-  };
-
-  candidates = $("tr");
-  $("span.total").text(candidates.length - 1);
-  sortCandidates();
 
   var verifyButtonRespond = function(e) {
     var candidate = $(e.currentTarget).parents("tr")[0];
