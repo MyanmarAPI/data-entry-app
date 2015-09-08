@@ -533,8 +533,8 @@ app.get('/entries.csv', function(req, res) {
 });
 
 app.get('/gender', function(req, res) {
-  db.all("SELECT 'entry' AS source, norm_national_id, full_name, form_id FROM entries WHERE gender = '' AND form_id != 0 AND form_id IS NOT NULL AND form_id != '' LIMIT 10", function(err, row) {
-    row.sort(function() {
+  db.all("SELECT norm_national_id, full_name, form_id FROM entries WHERE gender = '' AND form_id != 0 AND form_id IS NOT NULL AND form_id != '' UNION SELECT norm_national_id, full_name, form_id FROM consensus_forms WHERE gender = '' AND form_id != 0 AND form_id IS NOT NULL AND form_id != '' LIMIT 10", function(err, row) {
+    row = row.sort(function() {
       return Math.random() - 0.5;
     });
     res.render('gender', {
