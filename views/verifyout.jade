@@ -1,0 +1,87 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/autocomplete-0.3.0.min.css")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    h2 Verify Candidates
+    form.search(action="/verify.csv", method="GET")
+      .form-group
+        label House
+        select(name="house", value=house)
+          option(value="") all
+          option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
+          option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
+          option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+      .form-group
+        label Constituency Name
+        //
+          select#conname(name="constituency", value=constituency)
+        input#connamehold(type="hidden", name="constituency", value=constituency)
+        #conname
+      .form-group
+        label Constituency Number (or 0)
+        input#old_con_number(type="hidden", value=constituency_number)
+        input#old_con_name(type="hidden", value=constituency)
+        input(type="text", name="constituency_number", value=constituency_number)
+      .form-group
+        input.button(type="submit", value="Search")
+
+    if candidates
+      table#candidates
+        tr.header
+          td.source source
+          td.dbid= dbid
+          th.constituency_number
+          td.norm_id norm_id
+          th.name Name
+          th.natid National ID
+          th.party Party
+          th.address Constituency
+          th.house House
+          th.state State
+        for candidate in candidates
+          if house && candidate.house
+            if house !== candidate.house && !(house == 'ပြည်သူ့လွှတ်တော်' && candidate.house == 'lower' || house == 'အမျိုးသားလွှတ်တော်' && candidate.house == 'upper' || house == 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်' && candidate.house == 'state')
+              - continue
+          tr
+            td.source= candidate.source
+            td.dbid= candidate.id
+            td.constituency_number= candidate.constituency_number
+            td.norm_id= candidate.norm_national_id
+            td.name
+              if candidate.form_id && candidate.form_id != 0
+                a(href="/form/#{candidate.form_id}", target="_blank")= candidate.full_name
+              else
+                = candidate.full_name
+            td.natid= candidate.national_id
+            td.party= candidate.party
+            td.address= candidate.constituency_name
+            td.house
+              if candidate.house
+                span= candidate.house
+              else
+                select
+                  option(value="အမျိုးသားလွှတ်တော်") အမျိုးသားလွှတ်တော်
+                  option(value="ပြည်သူ့လွှတ်တော်") ပြည်သူ့လွှတ်တော်
+                  option(value="တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်") တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်
+            td.state= candidate.state
+
+      input.findname(type="text", value="", placeholder="Find name")
+      button.findname Find by Name
+      input.findmore(type="text", value="", placeholder="Find ID")
+      button.findmore Find by ID
+      br
+      br
+
+      span.verified 0
+      span /
+      span.total
+      span &nbsp;verified:
+      button.done Complete Verify
+
+  script(type="text/javascript", src="/scripts/myanmar.names.js")
+  script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
+  script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
+  script(type="text/javascript", src="/scripts/verify.js")

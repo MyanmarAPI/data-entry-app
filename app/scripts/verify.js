@@ -1,15 +1,33 @@
+var missing_link = false;
+
 $(function () {
   // filter down to candidates with unique IDs
   // prefer consensus_forms
   var known_candidates = [];
   var candidates = $("tr").not('.header');
+  var missing_links = {};
   for (var c = 0; c < candidates.length; c++) {
     var candidate_id = $(candidates[c]).find('td.norm_id').text().replace(/\s/g, '');
     if (known_candidates.indexOf(candidate_id) === -1 && candidate_id.match(/\d\d/)) {
       // new candidate with valid ID
       known_candidates.push(candidate_id);
+      if ($(candidates[c]).find('a').length === 0) {
+        // no link
+        missing_links[candidate_id] = $(candidates[c]);
+      }
     } else {
       // repeat (consensus_forms come first, so this could be an old entry copy)
+      if (missing_links[candidate_id] && $(candidates[c]).find('a').length > 0) {
+
+        missing_links[candidate_id].find('td.name').html(
+          $("<a>link</a>")
+            .attr("href", 
+              $(candidates[c]).find('a').attr('href')
+            )
+            .text( missing_links[candidate_id].find('td.name').text() )
+        );
+        missing_links[candidate_id] = null;
+      }
       $(candidates[c]).remove();
     }
   }

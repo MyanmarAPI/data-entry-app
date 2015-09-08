@@ -763,6 +763,90 @@ app.get('/house/:house', function(req, res) {
   }
 });
 
+
+app.get('/verify.csv', function(req, res) {
+  var constituency = req.query.constituency;
+  var constituency_number = myanmarNumbers(req.query.constituency_number + '');
+
+  if (!constituency || constituency_number > 12) {
+    return res.render('verify');
+  } else if (constituency === 'ပြည်' || constituency === 'မကွေး') {
+    constituency += '%';
+  } else {
+    constituency = '%' + constituency + '%';
+  }
+
+  if (constituency_number && constituency_number * 1) {
+    db.all("SELECT id, state, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, house, 'consensus_form' AS source FROM consensus_forms WHERE verified = 1 AND constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) UNION SELECT id, state, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, house, 'entry' AS source FROM entries WHERE verified = 1 AND constituency_name LIKE ? AND (constituency_number = ? OR (constituency_number = 0 AND house != 'lower' AND house != 'ပြည်သူ့လွှတ်တော်') AND (? < 3 OR TRIM(house) NOT IN ('state', 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်')) ) ORDER BY source, form_id DESC, id DESC", [constituency, constituency_number, constituency_number, constituency, constituency_number, constituency_number], function (err, candidates) {
+      if (err) {
+        throw err;
+        return res.send(err);
+      }
+      res.render('verifyout', {
+        house: req.query.house,
+        candidates: candidates,
+        constituency: constituency.substring(1, constituency.length - 1),
+        constituency_number: constituency_number
+      });
+    });
+  } else {
+    db.all("SELECT id, state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'consensus_form' AS source FROM consensus_forms WHERE verified = 1 AND constituency_name LIKE ? UNION SELECT id, state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'entry' AS source FROM entries WHERE verified = 1 AND constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC", [constituency, constituency], function (err, candidates) {
+      if (err) {
+        throw err;
+        return res.send(err);
+      }
+      res.render('verifyout', {
+        house: req.query.house,
+        candidates: candidates,
+        constituency: constituency.substring(1, constituency.length - 1),
+        constituency_number: constituency_number
+      });
+    });
+  }
+});
+
+app.get('/add_states', function (req, res) {
+
+   var runState = function(c) {
+     var runConstituency = function(n) {
+		db.run("UPDATE entries SET state = ? WHERE constituency_name LIKE '%" + lower[c].constituencies[n] + "%'", lower[c].area, function (err) {
+		  if (err) {
+			throw err;
+		  }
+		  db.run("UPDATE consensus_forms SET state = ? WHERE constituency_name LIKE '%" + lower[c].constituencies[n] + "%'", lower[c].area, function (err) {
+		    if (err) {
+		  	  throw err;
+		    }
+		    n++;
+		    if (n >= lower[c].constituencies.length) {
+		      c++;
+		      runState(c);
+		    } else {
+		      runConstituency(n);
+		    }
+		  });
+		});
+	};
+	runConstituency(0);
+  };
+  runState(0);
+  
+  /*
+  for (var c = 0; c < upper.length; c++) {
+		db.run("UPDATE entries SET state = ? WHERE constituency_name LIKE '%" + upper[c].name + "%'", lower[c].area, function (err) {
+		  if (err) {
+			throw err;
+		  }
+		  db.run("UPDATE consensus_forms SET state = ? WHERE constituency_name LIKE '%" + upper[c].name + "%'", lower[c].area, function (err) {
+		    if (err) {
+		  	  throw err;
+		    }
+		  });
+		});
+  }
+  */
+});
+
 // user authentication sections
 
 app.post('/register', function(req, res) {
