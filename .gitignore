@@ -9,3 +9,5 @@ test/bower_components/
 app/form_images/*.png
 app/fax_images/*.jpg
 app/color_images/*.jpg
+data/*.csv
+data/*.tsv
