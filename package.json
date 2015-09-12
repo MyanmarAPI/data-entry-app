@@ -25,7 +25,7 @@
     "myanmar-numbers": "^1.0.2",
     "passport": "^0.2.2",
     "passport-local": "^1.0.0",
-    "sqlite3": "^3.0.9",
+    "sqlite3": "^3.0.10",
     "timeago": "^0.2.0"
   },
   "devDependencies": {

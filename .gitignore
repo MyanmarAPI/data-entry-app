@@ -11,3 +11,4 @@ app/fax_images/*.jpg
 app/color_images/*.jpg
 data/*.csv
 data/*.tsv
+data/*.json
