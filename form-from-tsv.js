@@ -132,6 +132,7 @@ function processCandidate(candidate, advance, islower, setname) {
 
       // if there is no name match, candidates get a second pass at name-matching
       // setname is that more-fuzzy name
+      var original_name = name;
       if (setname) {
         name = setname;
       }
@@ -184,7 +185,7 @@ function processCandidate(candidate, advance, islower, setname) {
 		        verified, house, form_id, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ?  ORDER BY source, verified DESC, form_id DESC, id DESC", [searchname, searchname], function (err, people) {
 		          if (!people.length) {
                 // no results? retry with a more fuzzy name query if you can
-                var original_name = name;
+                original_name = name;
                 for (var r = 0; r < replaces.length; r++) {
                   while (name.indexOf(replaces[r][0]) > -1) {
                     name = name.replace(replaces[r][0], replaces[r][1]);
@@ -199,7 +200,7 @@ function processCandidate(candidate, advance, islower, setname) {
                     state: state,
                     constituency_name: con_name,
                     constituency_number: con_number,
-                    name: name,
+                    name: original_name,
                     party: party
                   });
 		              console.log('no matches: (' + name + ')');
