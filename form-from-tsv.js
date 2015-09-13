@@ -1,6 +1,7 @@
 var fs = require('fs');
 var csv = require('fast-csv');
 var sqlite3 = require("sqlite3");
+var csvStream, errorStream;
 
 // candidate final db?
 var db = new sqlite3.Database('./official.sqlite3');
@@ -65,24 +66,37 @@ var normalizeNatId = function(natid) {
 };
 
 // output candidates for this house
-var csvStream = csv.createWriteStream({headers: true});
-var corrected = fs.createWriteStream("./lower_house_candidates.csv");
-csvStream.pipe(corrected);
+outputHouse('upper');
 
-var errorStream = csv.createWriteStream({headers: true});
-var closed = fs.createWriteStream("./lower_house_unmatched.csv");
-errorStream.pipe(closed);
-
-// rebuild the official DB
-db.run('DELETE FROM candidates', function (err) {
-  if (err) {
-    throw err;
+function outputHouse (house) {
+  var houses = {
+    'lower': 'ပြည်သူ့လွှတ်တော်',
+    'upper': 'အမျိုးသားလွှတ်တော်',
+    'state': 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်'
   }
+  csvStream = csv.createWriteStream({headers: true});
+  var corrected = fs.createWriteStream("./" + house + "_house_candidates.csv");
+  csvStream.pipe(corrected);
 
-  //doUpperHouse();
-  doLowerHouse();
-  //doStatesRegions();
-});
+  errorStream = csv.createWriteStream({headers: true});
+  var closed = fs.createWriteStream("./" + house + "_house_unmatched.csv");
+  errorStream.pipe(closed);
+
+  // rebuild the official DB
+  db.run('DELETE FROM candidates WHERE house = ?', houses[house], function (err) {
+    if (err) {
+      throw err;
+    }
+
+    if (house === 'upper') {
+      doUpperHouse();
+    } else if (house === 'lower') {
+      doLowerHouse();
+    } else if (house === 'state') {
+      doStatesRegions();
+    }
+  });
+}
 
 /* structure
 CREATE TABLE candidates (
@@ -147,9 +161,9 @@ function processCandidate(candidate, advance, islower, setname) {
       // drop prefixes U and Daw
       var searchname = name;
       if (searchname.indexOf('ဦး') === 0) {
-        searchname = '%' + name.replace('ဦး', '');
+        searchname = name.replace('ဦး', '%');
       } else if (searchname.indexOf('ဒေါ်') === 0) {
-        searchname = '%' + name.replace('ဒေါ်', '');
+        searchname = name.replace('ဒေါ်', '%');
       } else {
         searchname = '%' + name;
       }
@@ -185,14 +199,14 @@ function processCandidate(candidate, advance, islower, setname) {
 		        verified, house, form_id, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ?  ORDER BY source, verified DESC, form_id DESC, id DESC", [searchname, searchname], function (err, people) {
 		          if (!people.length) {
                 // no results? retry with a more fuzzy name query if you can
-                original_name = name;
+                var check_name = name;
                 for (var r = 0; r < replaces.length; r++) {
                   while (name.indexOf(replaces[r][0]) > -1) {
                     name = name.replace(replaces[r][0], replaces[r][1]);
                   }
                 }
 
-                if (original_name === name) {
+                if (setname || check_name === name) {
                   // none of the fuzz replacements changed this candidate's name
                   // not worth rerunning their name
                   errorStream.write({
@@ -203,8 +217,8 @@ function processCandidate(candidate, advance, islower, setname) {
                     name: original_name,
                     party: party
                   });
-		              console.log('no matches: (' + name + ')');
-                  return advance();
+		              // console.log('no matches: (' + name + ')');
+                  return advance('no matches');
                 } else {
                   // go run with fuzz
                   return processCandidate(original_candidate, advance, islower, name);
@@ -248,6 +262,21 @@ function processCandidate(candidate, advance, islower, setname) {
 		            }
 		          }
 
+              function nomatch(natids, id) {
+                try {
+                  for (var n = 0; n < natids.length; n++) {
+                    if (!(natids[n].split('XOX')[0] === id.split('XOX')[0]) && !(natids[n].split('XOX')[1] === id.split('XOX')[1])) {
+                       // this ID was just TOO different
+                       // definitely two or more people share this name
+                       return true;
+                    }
+                  }
+                } catch(e) {
+                  console.log(JSON.stringify(natids) + " - " + id);
+                }
+                return false;
+              }
+
               if (multimatch) {
                 // ok there are multiple ids in your results
                 // let's see if some have a matching ID prefix or suffix
@@ -255,20 +284,17 @@ function processCandidate(candidate, advance, islower, setname) {
                 // foundBlocker = true if we find someone whose ID is just TOO different
                 var foundBlocker = false;
 		            for (var n = 0; n < natids.length - 1; n++) {
-		              if (natids[n].length < 5 || !natids[n].match(/\d\d/)) {
+		              if (natids[n].length < 5 || !natids[n].match(/\d\d\d/)) {
                     // this ID was not a good format
                     // I'm not sure what to do with it
-                    console.log('bad nid');
+                    // console.log('bad nid');
 		                foundBlocker = true;
 		                break;
 		              }
-		              if (!(natids[n].split('XOX')[0] === natids[n+1].split('XOX')[0]) && !(natids[n].split('XOX')[1] === natids[n+1].split('XOX')[1])
-                   && !(formids[n] && formids[n+1] && formids[n] === formids[n+1])) {
-                     // this ID was just TOO different
-                     // definitely two or more people share this name
-		                 foundBlocker = true;
-		                 break;
-		              }
+		              foundBlocker = nomatch([natids[n]], natids[n+1]);
+                  if (foundBlocker) {
+                    break;
+                  }
 		            }
 		            if (foundBlocker) {
                   // there are multiple IDs, but you can get another chance to save matches
@@ -319,15 +345,14 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.constituency_name.indexOf(adjust_con_name) > -1) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          } else if (nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -359,15 +384,14 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.party.indexOf(party) > -1 || party.indexOf(person.party) > -1 || adjust_party_name.indexOf(person.party) > -1 || person.party.indexOf(adjust_party_name) > -1) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          } else if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -389,15 +413,15 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.house === house) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          }
+                          if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -419,15 +443,15 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.verified) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          }
+                          if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -456,15 +480,15 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.party.indexOf(party) > -1 || party.indexOf(person.party) > -1 || adjust_party_name.indexOf(person.party) > -1 || person.party.indexOf(adjust_party_name) > -1) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          }
+                          if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -486,15 +510,15 @@ function processCandidate(candidate, advance, islower, setname) {
                     people.map(function (person) {
                       var normid = normalizeNatId(person.norm_national_id);
                       if (person.constituency_number === con_number) {
-                        if (!uniques.length) {
-                          // at least one person is a match
-                          multimatch = false;
-                        }
-                        if (normid && uniques.length && uniques.indexOf(normid) === -1) {
-                          // ok, now we are back to 2+ people; multimatch = true
-                          multimatch = true;
-                        }
                         if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          }
+                          if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
                           uniques.push(normid);
                         }
 
@@ -518,20 +542,25 @@ function processCandidate(candidate, advance, islower, setname) {
                         return points_by_id[b] - points_by_id[a];
                       });
 
-                      if (points_by_id[normids[0]] > points_by_id[normids[1]]) {
+                      if (points_by_id[normids[0]] > points_by_id[normids[1]] || !nomatch([points_by_id[normids[0]]], points_by_id[normids[1]])) {
                         var uniques = [];
                         for (var p = 0; p < people.length; p++) {
-                          if (normalizeNatId(people[p].norm_national_id) === normids[0]) {
+                          if (!nomatch([normalizeNatId(people[p].norm_national_id)], normids[0])) {
                             uniques.push(people[p].norm_national_id);
                           }
                         }
                         savePeople(uniques);
                       } else {
-      		              console.log('multiple IDs for ' + name);
-                        //console.log(people);
-                        //return;
-    		                //console.log(natids);
-      		              return advance();
+      		              // console.log('multiple IDs for ' + name);
+                        errorStream.write({
+                          house: house,
+                          state: state,
+                          constituency_name: con_name,
+                          constituency_number: con_number,
+                          name: original_name,
+                          party: party
+                        });
+      		              return advance('multiple IDs');
                       }
                     }
   		            }
@@ -557,7 +586,7 @@ function processCandidate(candidate, advance, islower, setname) {
                         state: state,
                         constituency_name: con_name,
                         constituency_number: con_number,
-                        full_name: name,
+                        full_name: original_name,
                         photo_id: found_form,
                         party: party,
                         gender: row.gender,
@@ -590,7 +619,7 @@ function processCandidate(candidate, advance, islower, setname) {
                   // if I found a person but not their photo, search the original DB for other people with that ID who *do* have a photo
                   var normid;
                   if (!people.length || !best_source.length) {
-                    return advance();
+                    return advance('no photo and no more people');
                   }
                   for (var q = 0; q < people.length; q++) {
                     if (people[q].source === best_source[0] && people[q].id === best_source[1]) {
@@ -608,8 +637,8 @@ function processCandidate(candidate, advance, islower, setname) {
                       saveForm();
                     } else {
                       // still not able to find this photo
-                      console.log('person but not form for ' + name);
-                      advance();
+                      //console.log('person but not form for ' + name);
+                      advance('no photo');
                     }
                   });
   		          }
@@ -646,16 +675,19 @@ function doUpperHouse() {
 		  var name = candidate[3].replace(/\s/g, '').replace(/့်/g, '့်');
 		  var party = candidate[4];
 
-		  function advance() {
+		  function advance(reason) {
   			// advance
   			c++;
   			if (!(c % 50)) {
   			  console.log("-- " + c);
   			}
+        if (reason) {
+          console.log(reason + JSON.stringify(candidates[c]));
+        }
   			if (c < candidates.length) {
   			  addCandidate(c);
   			} else {
-  			  console.log('done upper house');
+  			  //console.log('done upper house');
           corrected.end();
           errorStream.end();
           //doLowerHouse();
@@ -709,19 +741,17 @@ function doLowerHouse() {
       var name = candidate[3].replace(/\s/g, '').replace(/့်/g, '့်');
       var party = candidate[4] || '';
 
-      if (!party.length) {
-        // these are weird rows
-        console.log(candidates[c]);
-      }
-
       // get state name not from the CSV but from the official JSON file
       state = getState(con_name);
 
       candidate[5] = state;
       lastConstituency = con_name;
 
-      function advance() {
+      function advance(reason) {
         // advance to the next candidate or finish
+        if (reason) {
+          console.log(reason + JSON.stringify(candidates[c]));
+        }
         c++;
         if (!(c % 50)) {
           console.log("-- " + c);
@@ -736,7 +766,7 @@ function doLowerHouse() {
 
       if (!name || !con_name) {
         // no point in working with a nameless candidate
-        return advance();
+        return advance('no name or con name');
       }
 
       // add this candidate to the final DB

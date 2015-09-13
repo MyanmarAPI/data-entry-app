@@ -114,7 +114,7 @@ csv.fromPath('./lower_house_candidates.csv', { headers: true })
     var fixURL = function (i) {
 
       if (candidates[i].photo_url && known_ids.indexOf(candidates[i].photo_url) > -1) {
-        console.log(candidates[i].photo_url);
+        console.log('repeat: ' + candidates[i].photo_url);
       }
       known_ids.push(candidates[i].photo_url);
 

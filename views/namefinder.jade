@@ -1,0 +1,41 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    link(rel="stylesheet", type="text/css", href="/styles/myanmar.css")
+  body
+    div(style="margin-left:15%;")
+      table
+        tr
+          th Name
+          th House
+          th Constituency
+          th Constituency #
+          th Party
+        tr
+          td.name= person.full_name
+          td.house= person.house
+          td.con_name= person.constituency
+          td.con_number= person.constituency_number
+          td.party= person.party
+      if matches.length === 0
+        .namesearch
+          input(type="text", value=fuzzname.replace(/%/g, ''))
+          button Search
+      h3 Names
+      table#candidates
+        for person in matches
+          tr
+            td.verify
+              button Approve
+            td.name= person.full_name
+            td.norm_id= person.norm_national_id
+            td.house= person.house
+            td.con_name= person.constituency_name
+            td.con_number= person.constituency_number
+            td.party= person.party
+
+  script(type="text/javascript", src="/scripts/myanmar.names.js")
+  script(type="text/javascript", src="/scripts/jquery-1.11.3.min.js")
+  script(type="text/javascript", src="/scripts/autocomplete-0.3.0.min.js")
+  script(type="text/javascript", src="/scripts/namesearch.js")

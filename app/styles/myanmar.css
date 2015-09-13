@@ -155,6 +155,12 @@ td.hide {
   display: none;
 }
 
+.namesearch input, .namesearch button {
+  font-size: 16pt;
+  padding: 5px;
+  vertical-align: middle;
+}
+
 /*
 #conname {
   background: url('/images/darrow.png');

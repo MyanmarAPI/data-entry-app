@@ -16,6 +16,9 @@ if (typeof global.it === 'function') {
 } else {
   db = new sqlite3.Database('./database.sqlite3');
 }
+
+var matcher = new sqlite3.Database('./official.sqlite3');
+
 var timeago = require("timeago");
 var csv = require("fast-csv");
 
@@ -790,61 +793,120 @@ app.get('/verify.csv', function(req, res) {
       });
     });
   } else {
-    db.all("SELECT id, gender, religion, ward_village, voter_list_number, dob, nationality, father, father_ethnicity, father_religion, mother, mother_ethnicity, mother_religion, occupation, education, ward_village,  state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'consensus_form' AS source FROM consensus_forms WHERE verified = 1 AND constituency_name LIKE ? UNION SELECT id, gender, religion, ward_village, voter_list_number, dob, nationality, father, father_ethnicity, father_religion, mother, mother_ethnicity, mother_religion, occupation, education, ward_village, state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'entry' AS source FROM entries WHERE verified = 1 AND constituency_name LIKE ? ORDER BY source, form_id DESC, id DESC", [constituency, constituency], function (err, candidates) {
+    db.all("SELECT id, gender, religion, ward_village, voter_list_number, dob, nationality, father, father_ethnicity, father_religion, mother, mother_ethnicity, mother_religion, occupation, education, ward_village, state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'consensus_form' AS source FROM consensus_forms WHERE constituency_number = 0 AND verified = 1 UNION SELECT id, gender, religion, ward_village, voter_list_number, dob, nationality, father, father_ethnicity, father_religion, mother, mother_ethnicity, mother_religion, occupation, education, ward_village, state, full_name, form_id, party, constituency_name, national_id, norm_national_id, house, 'entry' AS source FROM entries WHERE constituency_number = 0 AND verified = 1 ORDER BY constituency_name, source, form_id DESC, id DESC", function (err, people) {
       if (err) {
         throw err;
         return res.send(err);
       }
-      res.render('verifyout', {
+
+      var candidates = {};
+      var last_constituency = null;
+      for (var p = 0; p < people.length; p++) {
+        var adjustName = people[p].constituency_name.split('မြို့နယ်')[0];
+        if (adjustName !== last_constituency) {
+          last_constituency = adjustName;
+          candidates[last_constituency] = [];
+        }
+        candidates[last_constituency].push(people[p]);
+      }
+
+      res.render('verifybetter', {
         house: req.query.house,
-        candidates: candidates,
-        constituency: constituency.substring(1, constituency.length - 1),
-        constituency_number: constituency_number
+        candidates_by_constituency: candidates,
+        constituencies: Object.keys(candidates)
       });
     });
   }
 });
 
-app.get('/add_states', function (req, res) {
+function searchForNames(name, callback) {
+  var full_name_sql = "REPLACE(REPLACE(full_name, ' ', ''), '့်', '့်')";
 
-   var runState = function(c) {
-     var runConstituency = function(n) {
-		db.run("UPDATE entries SET state = ? WHERE constituency_name LIKE '%" + lower[c].constituencies[n] + "%'", lower[c].area, function (err) {
-		  if (err) {
-			throw err;
-		  }
-		  db.run("UPDATE consensus_forms SET state = ? WHERE constituency_name LIKE '%" + lower[c].constituencies[n] + "%'", lower[c].area, function (err) {
-		    if (err) {
-		  	  throw err;
-		    }
-		    n++;
-		    if (n >= lower[c].constituencies.length) {
-		      c++;
-		      runState(c);
-		    } else {
-		      runConstituency(n);
-		    }
-		  });
-		});
-	};
-	runConstituency(0);
-  };
-  runState(0);
-  
-  /*
-  for (var c = 0; c < upper.length; c++) {
-		db.run("UPDATE entries SET state = ? WHERE constituency_name LIKE '%" + upper[c].name + "%'", lower[c].area, function (err) {
-		  if (err) {
-			throw err;
-		  }
-		  db.run("UPDATE consensus_forms SET state = ? WHERE constituency_name LIKE '%" + upper[c].name + "%'", lower[c].area, function (err) {
-		    if (err) {
-		  	  throw err;
-		    }
-		  });
-		});
+  db.all("SELECT id, gender, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
+        verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE " + full_name_sql + " LIKE ? UNION \
+        SELECT id, gender, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
+        verified, house, form_id, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ?  ORDER BY source, verified DESC, form_id DESC, id DESC", [name, name], function (err, people) {
+    if (err) {
+      return callback(err);
+    }
+    if (!people.length) {
+      // fuzz for more results
+      var replaces = [
+        ['ဂ', 'ဝ'],
+        ['က','တ'],
+        ['ထ','တ'],
+        ['ယ','တ'],
+        ['(', ''],
+        [')', ''],
+        ['ာ', 'ါ'],
+        ['့်', '့်'],
+        ['ဥ', 'ဉ'],
+        ['ဦ', 'ဉ']
+      ];
+
+      var searchname = name;
+      if (searchname.indexOf('ဦး') === 0) {
+        searchname = name.replace('ဦး', '%');
+      } else if (searchname.indexOf('ဒေါက်တာ') === 0) {
+        searchname = name.replace('ဒေါက်တာ', '%');
+      } else if (searchname.indexOf('ဒေါ်') === 0) {
+        searchname = name.replace('ဒေါ်', '%');
+      } else {
+        searchname = '%' + name + '%';
+      }
+      for (var r = 0; r < replaces.length; r++) {
+        while (searchname.indexOf(replaces[r][0]) > -1) {
+          searchname = searchname.replace(replaces[r][0], replaces[r][1]);
+        }
+        full_name_sql = "REPLACE(" + full_name_sql + ", '" + replaces[r][0] + "', '" + replaces[r][1] + "')";
+      }
+
+      db.all("SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
+            verified, house, 'consensus_form' AS source FROM consensus_forms WHERE " + full_name_sql + " LIKE ? UNION \
+            SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
+            verified, house, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ?  ORDER BY source, verified DESC, form_id DESC, id DESC", [searchname, searchname], function (err, people) {
+        if (err) {
+          return callback(err);
+        }
+        return callback(null, searchname, people);
+      });
+    } else {
+      return callback(null, name, people);
+    }
+  });
+}
+
+app.get('/name', function (req, res) {
+  if (req.query.search) {
+    searchForNames(req.query.search, function (err, fuzzname, results) {
+      if (err) {
+        return res.json(err);
+      }
+      res.json({
+        fuzzname: fuzzname,
+        people: results
+      });
+    });
+  } else {
+    matcher.get('SELECT * FROM candidates WHERE best_entry_id IS NULL AND best_consensus_id IS NULL ORDER BY RANDOM()', function (err, person) {
+      if (err) {
+        return res.json(err);
+      }
+      if (!person) {
+        return res.json({});
+      }
+      searchForNames(person.full_name, function(err, fuzzname, results) {
+        if (err) {
+          return res.json(err);
+        }
+        res.render('namefinder', {
+          person: person,
+          fuzzname: fuzzname,
+          matches: results
+        });
+      });
+    });
   }
-  */
 });
 
 // user authentication sections
