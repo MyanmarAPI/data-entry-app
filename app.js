@@ -17,7 +17,7 @@ if (typeof global.it === 'function') {
   db = new sqlite3.Database('./database.sqlite3');
 }
 
-var matcher = new sqlite3.Database('./official.sqlite3');
+var matcher = new sqlite3.Database('./corrected.sqlite3');
 
 var timeago = require("timeago");
 var csv = require("fast-csv");
@@ -86,18 +86,6 @@ app.use(passport.session());
 // server status
 var serverStatus = require('./server-status');
 app.get('/status', serverStatus.status);
-
-// name output
-app.get('/names', function (req, res) {
-  db.all('SELECT full_name, national_id FROM consensus_forms', function(err, rows) {
-    rows = rows.map(function(row) {
-      return row.full_name + " (" + row.national_id + ")";
-    });
-    res.render('names', {
-      namelist: rows
-    });
-  });
-});
 
 // error fixer - data should be relatively complete
 app.get('/form/:id', function (req, res) {
@@ -895,18 +883,31 @@ app.get('/name', function (req, res) {
       if (!person) {
         return res.json({});
       }
-      searchForNames(person.full_name, function(err, fuzzname, results) {
+      searchForNames(person.full_name, person.constituency_name, function(err, fuzzname, results) {
         if (err) {
           return res.json(err);
         }
         res.render('namefinder', {
           person: person,
           fuzzname: fuzzname,
-          matches: results
+          matches: results,
+          constituency: (req.query.constituency || person.constituency_name || '').replace(/ပြည်နယ်|မြို့နယ်|တိုင်းဒေသကြီး|မဲဆန္ဒနယ်/g, '')
         });
       });
     });
   }
+});
+
+app.post('/name', function (req, res) {
+  matcher.run('UPDATE candidates SET house = ?, best_entry_id = ?, best_consensus_id = ? WHERE id = ?',
+    [
+      req.body.house,
+      (req.body.source == 'entry') ? req.body.id : null,
+      (req.body.source == 'consensus_form') ? req.body.id : null,
+      req.body.candidate
+    ], function (err) {
+    res.json(err);
+  });
 });
 
 // user authentication sections

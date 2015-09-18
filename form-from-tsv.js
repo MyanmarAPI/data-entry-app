@@ -1,7 +1,8 @@
 var fs = require('fs');
 var csv = require('fast-csv');
 var sqlite3 = require("sqlite3");
-var csvStream, errorStream;
+var md5 = require('md5');
+var csvStream, errorStream, corrected, closed, candid_id;
 
 // candidate final db?
 var db = new sqlite3.Database('./official.sqlite3');
@@ -15,10 +16,12 @@ var myanmarNumbers = require('myanmar-numbers').myanmarNumbers;
 // lower house constituencies - official names
 var lower = require('./data/lower_house.json');
 
+// people whose names are kinda similar
+var phototraps = require("./data/phototraps.json");
+
 // natid normalization / matching
 var nat_id_sql =
 "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(norm_national_id, 'နိုင်', 'XOX'), 'နို်င', 'XOX'), ' ', ''), '-', ''), '.', ''), '/', ''), '့်', '့်'),'(', ''), ')', ''), '−', ''), '၊', ''), 'ပဘ', 'သဘ')";
-
 
 // party normalization
 var fixnames = require('./data/fixnames.json');
@@ -45,13 +48,15 @@ function getState (township, i) {
       }
     }
   }
-  console.log('didnt find township (' + township + "/" + searchTownship + ')')
 }
 
 // normalize a national ID
 var normalizeNatId = function(natid) {
   natid = (natid + "").replace(/နိုင်/g, 'XOX');
   natid = natid.replace(/နို်င/g, 'XOX');
+  if (natid.indexOf('-') > -1 && natid.indexOf('XOX') === -1) {
+    natid = natid.replace('-', 'XOX');
+  }
   natid = natid.replace(/\-/g, '');
   natid = natid.replace(/\−/g, '');
   natid = natid.replace(/\./g, '');
@@ -66,20 +71,23 @@ var normalizeNatId = function(natid) {
 };
 
 // output candidates for this house
-outputHouse('upper');
+//outputHouse('upper');
+outputHouse('lower');
+//outputHouse('state');
 
 function outputHouse (house) {
+  phototraps = phototraps[house] || [];
   var houses = {
     'lower': 'ပြည်သူ့လွှတ်တော်',
     'upper': 'အမျိုးသားလွှတ်တော်',
-    'state': 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်'
+    'state': 'တိုင်းဒေသကြီး/ပြည်နယ်လွှတ်တော်'
   }
   csvStream = csv.createWriteStream({headers: true});
-  var corrected = fs.createWriteStream("./" + house + "_house_candidates.csv");
+  corrected = fs.createWriteStream("./" + house + "_house_candidates.csv");
   csvStream.pipe(corrected);
 
   errorStream = csv.createWriteStream({headers: true});
-  var closed = fs.createWriteStream("./" + house + "_house_unmatched.csv");
+  closed = fs.createWriteStream("./" + house + "_house_unmatched.csv");
   errorStream.pipe(closed);
 
   // rebuild the official DB
@@ -104,6 +112,7 @@ CREATE TABLE candidates (
     "form_id" INTEGER,
     "house" TEXT,
     "full_name" TEXT,
+    "state" TEXT,
     "constituency" TEXT,
     "constituency_number" INTEGER,
     "party" TEXT,
@@ -120,10 +129,7 @@ function processCandidate(candidate, advance, islower, setname) {
         if (islower === 'state') {
           // states and regions house
           con_name = (candidate[1].split(/\s/)[0] || '').split('(')[0].replace(/\s/g, '').replace(/့်/g, '့်');
-          con_number = '';
-          if (candidate[1].match(/\(/)) {
-            con_number = myanmarNumbers(candidate[1].split('(')[1].split(')')[0]);
-          }
+          con_number = (myanmarNumbers(candidate[1]) + "").match(/\d+/);
           name = candidate[2].replace(/\s/g, '').replace(/့်/g, '့်');
           party = candidate[3] || '';
         } else {
@@ -137,16 +143,32 @@ function processCandidate(candidate, advance, islower, setname) {
 
       } else {
         // upper house
-        con_name = candidate[1].split(' - ')[0];
+        con_name = candidate[1].replace(/\s/g, '').split('-')[0];
         state = con_name.replace(/\s/g, '').replace(/့်/g, '့်');
-		    con_number = myanmarNumbers(candidate[1].split(' - ')[1]);
-        name = candidate[3].replace(/\s/g, '').replace(/့်/g, '့်');
-        party = candidate[4];
+        con_number = myanmarNumbers(candidate[1].replace(/\s/g, '').split('-')[1]);
+        name = candidate[2].replace(/\s/g, '').replace(/့်/g, '့်');
+        party = candidate[3];
       }
+
+/*
+      if (!con_number) {
+        console.log(candidate);
+      }
+*/
+
+      // correct weird name errors in source
+      name = name.replace('ဦီး', 'ဦး');
 
       // if there is no name match, candidates get a second pass at name-matching
       // setname is that more-fuzzy name
       var original_name = name;
+
+/*
+      if (phototraps.indexOf(original_name) > -1) {
+        return advance('photo trap');
+      }
+      */
+
       if (setname) {
         name = setname;
       }
@@ -159,9 +181,11 @@ function processCandidate(candidate, advance, islower, setname) {
 
       // change name into a like query
       // drop prefixes U and Daw
-      var searchname = name;
+      var searchname = name.trim();
       if (searchname.indexOf('ဦး') === 0) {
         searchname = name.replace('ဦး', '%');
+      } else if (searchname.indexOf('ဒေါက်တ') === 0) {
+        searchname = name.replace('ဒေါက်တ', '%');
       } else if (searchname.indexOf('ဒေါ်') === 0) {
         searchname = name.replace('ဒေါ်', '%');
       } else {
@@ -183,7 +207,8 @@ function processCandidate(candidate, advance, islower, setname) {
         ['ာ', 'ါ'],
         ['့်', '့်'],
         ['ဥ', 'ဉ'],
-        ['ဦ', 'ဉ']
+        ['ဦ', 'ဉ'],
+        ['ခ', 'န']
       ];
       if (setname) {
         for (var r = 0; r < replaces.length; r++) {
@@ -192,11 +217,7 @@ function processCandidate(candidate, advance, islower, setname) {
       }
 
       // search our original DB for filter info
-
-		  matches.all("SELECT id, gender, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
-		        verified, house, form_id, 'consensus_form' AS source FROM consensus_forms WHERE " + full_name_sql + " LIKE ? UNION \
-		        SELECT id, gender, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, \
-		        verified, house, form_id, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ?  ORDER BY source, verified DESC, form_id DESC, id DESC", [searchname, searchname], function (err, people) {
+		  matches.all("SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, verified, house, 'consensus_form' AS source FROM consensus_forms WHERE " + full_name_sql + " LIKE ? UNION SELECT id, full_name, form_id, party, constituency_number, constituency_name, national_id, norm_national_id, verified, house, 'entry' AS source FROM entries WHERE " + full_name_sql + " LIKE ? ORDER BY source, verified DESC, form_id DESC, id DESC", [searchname, searchname], function (err, people) {
 		          if (!people.length) {
                 // no results? retry with a more fuzzy name query if you can
                 var check_name = name;
@@ -204,6 +225,9 @@ function processCandidate(candidate, advance, islower, setname) {
                   while (name.indexOf(replaces[r][0]) > -1) {
                     name = name.replace(replaces[r][0], replaces[r][1]);
                   }
+                }
+                if (searchname.indexOf('(ခ)') > -1) {
+                  searchname = searchname.split('(ခ)')[0] + '%';
                 }
 
                 if (setname || check_name === name) {
@@ -218,7 +242,7 @@ function processCandidate(candidate, advance, islower, setname) {
                     party: party
                   });
 		              // console.log('no matches: (' + name + ')');
-                  return advance('no matches');
+                  return advance(original_name + ' - no matches');
                 } else {
                   // go run with fuzz
                   return processCandidate(original_candidate, advance, islower, name);
@@ -242,9 +266,9 @@ function processCandidate(candidate, advance, islower, setname) {
 		            }
                 // keep track of any good national ids and photos
 		            natids.push(normid);
-                formids.push(people[p].form_id);
 
                 // keep track of the best-result photo, entry, and consensus form
+                formids.push(people[p].form_id);
 		            if (!found_form && people[p].form_id) {
 		              found_form = people[p].form_id;
 		            }
@@ -338,6 +362,37 @@ function processCandidate(candidate, advance, islower, setname) {
                   var points_by_id = {};
 
                   if (multimatch) {
+                    // check if names start the same (avoid u / daw confusion)
+                    var uniques = [];
+                    people.map(function (person) {
+                      var normid = normalizeNatId(person.norm_national_id);
+                      if (original_name.substring(0, 2) === person.full_name.substring(0, 2) && original_name[original_name.length - 1] === person.full_name[person.full_name.length - 1]) {
+                        if (normid) {
+                          if (!uniques.length) {
+                            // at least one person is a match
+                            multimatch = false;
+                          } else if (uniques.length && nomatch(uniques, normid)) {
+                            // ok, now we are back to 2+ people; multimatch = true
+                            multimatch = true;
+                          }
+                          uniques.push(normid);
+                        }
+
+                        // add a point
+                        points_by_id[normid] = 1;
+                      } else {
+                        points_by_id[normid] = 0;
+                      }
+                    });
+
+                    if (!multimatch) {
+                      // I just ended the multimatch
+                      // better save this record
+                      savePeople(uniques);
+                    }
+                  }
+
+                  if (multimatch) {
                     // normalize constituency name and then check for matches
 
                     var adjust_con_name = con_name.replace(/ပြည်နယ်|မြို့နယ်|တိုင်းဒေသကြီး|မဲဆန္ဒနယ်/g, '');
@@ -349,7 +404,9 @@ function processCandidate(candidate, advance, islower, setname) {
                           if (!uniques.length) {
                             // at least one person is a match
                             multimatch = false;
-                          } else if (nomatch(uniques, normid)) {
+                          //} else if (nomatch(uniques, normid)) {
+                          }
+                          if (phototraps.indexOf(original_name) > -1) {
                             // ok, now we are back to 2+ people; multimatch = true
                             multimatch = true;
                           }
@@ -357,9 +414,7 @@ function processCandidate(candidate, advance, islower, setname) {
                         }
 
                         // add a point
-                        points_by_id[normid] = 1;
-                      } else {
-                        points_by_id[normid] = 0;
+                        points_by_id[normid]++;
                       }
                     });
 
@@ -545,8 +600,9 @@ function processCandidate(candidate, advance, islower, setname) {
                       if (points_by_id[normids[0]] > points_by_id[normids[1]] || !nomatch([points_by_id[normids[0]]], points_by_id[normids[1]])) {
                         var uniques = [];
                         for (var p = 0; p < people.length; p++) {
-                          if (!nomatch([normalizeNatId(people[p].norm_national_id)], normids[0])) {
-                            uniques.push(people[p].norm_national_id);
+                          var normid = normalizeNatId(people[p].norm_national_id);
+                          if (!nomatch([normid], normids[0])) {
+                            uniques.push(normid);
                           }
                         }
                         savePeople(uniques);
@@ -569,7 +625,7 @@ function processCandidate(candidate, advance, islower, setname) {
                 // after I find out this person's photo, I'm going to save them to the database and I'm going to output them to the CSV
                 var saveForm = function() {
                   // here's where I update the candidate DB
-                  db.run("UPDATE candidates SET form_id = ?, best_consensus_id = ?, best_entry_id = ? WHERE full_name = ? AND constituency = ? AND constituency_number = ? AND party = ?", [found_form, best_consensus, best_entry, name, con_name, con_number, party], function (err) {
+                  db.run("UPDATE candidates SET form_id = ?, best_consensus_id = ?, best_entry_id = ? WHERE id = ?", [found_form, best_consensus, best_entry, candid_id], function (err) {
                     if (err) {
                       throw err;
                     }
@@ -582,6 +638,7 @@ function processCandidate(candidate, advance, islower, setname) {
 
                       // output CSV in this order
                       var outrow = {
+                        candidate_id: md5([house, con_name, con_number, original_name, party].join(';')),
                         house: house,
                         state: state,
                         constituency_name: con_name,
@@ -618,8 +675,11 @@ function processCandidate(candidate, advance, islower, setname) {
                 } else {
                   // if I found a person but not their photo, search the original DB for other people with that ID who *do* have a photo
                   var normid;
-                  if (!people.length || !best_source.length) {
-                    return advance('no photo and no more people');
+                  if (!people.length) {
+                    return advance('no people');
+                  }
+                  if (!best_source.length) {
+                    return advance('no best source');
                   }
                   for (var q = 0; q < people.length; q++) {
                     if (people[q].source === best_source[0] && people[q].id === best_source[1]) {
@@ -638,7 +698,10 @@ function processCandidate(candidate, advance, islower, setname) {
                     } else {
                       // still not able to find this photo
                       //console.log('person but not form for ' + name);
-                      advance('no photo');
+                      //advance(original_name + ' - no photo');
+                      console.log(original_name + ' - no photo?');
+                      found_form = '0';
+                      saveForm();
                     }
                   });
   		          }
@@ -651,16 +714,31 @@ function processCandidate(candidate, advance, islower, setname) {
 function doUpperHouse() {
   var candidates = [];
   var lastConstituency = null;
+  var activeConstituency = null;
 	csv.fromPath('./data/upper_house.tsv', { delimiter: '\t' })
 	  .on('data', function (data) {
+      // delete null chars
+      for (var i = 0; i < data.length; i++) {
+        var fixprop = "";
+        for (var c = 0; c < data[i].length; c++) {
+          if (!data[i].charCodeAt(c) < 60000) {
+            fixprop += data[i][c];
+          }
+        }
+        data[i] = fixprop;
+      }
+
   		if (data[1]) {
   		  activeConstituency = data[1];
-        if (activeConstituency !== lastConstituency && lastConstituency) {
-          csvStream.write({ state: activeConstituency, constituency_name: activeConstituency });
-        }
+        //if (activeConstituency !== lastConstituency && lastConstituency) {
+        //  csvStream.write({ state: activeConstituency, constituency_name: activeConstituency });
+        //}
   		} else {
   		  data[1] = activeConstituency;
   		}
+      if (data.length == 5) {
+        data = data.slice(0, 2).concat(data.slice(3, 5));
+      }
       if (data.length < 4) {
         return;
       }
@@ -670,20 +748,21 @@ function doUpperHouse() {
 		function addCandidate (c) {
 		  var candidate = candidates[c];
       candidate[0] = 'အမျိုးသားလွှတ်တော်';
-		  var con_name = candidate[1].split(' - ')[0];
-		  var con_number = myanmarNumbers(candidate[1].split(' - ')[1]);
-		  var name = candidate[3].replace(/\s/g, '').replace(/့်/g, '့်');
-		  var party = candidate[4];
+		  var con_name = candidate[1].replace(/\s/g, '').split('-')[0];
+		  var con_number = myanmarNumbers(candidate[1].replace(/\s/g, '').split('-')[1]);
+		  var name = candidate[2].replace(/\s/g, '').replace(/့်/g, '့်');
+		  var party = candidate[3];
 
 		  function advance(reason) {
   			// advance
+        if (reason) {
+          console.log(reason);
+          //console.log(candidates[c]);
+        }
   			c++;
   			if (!(c % 50)) {
   			  console.log("-- " + c);
   			}
-        if (reason) {
-          console.log(reason + JSON.stringify(candidates[c]));
-        }
   			if (c < candidates.length) {
   			  addCandidate(c);
   			} else {
@@ -699,6 +778,7 @@ function doUpperHouse() {
 		    if (err) {
 		      throw err;
 		    }
+        candid_id = this.lastID;
 
 		    processCandidate(candidate, advance);
 		  });
@@ -715,6 +795,17 @@ function doLowerHouse() {
   // we've done some modifications and canidate rejections and overall improvements to the underlying WinResearcher file, so PLEASE do not update the TSV itself
   csv.fromPath('./data/lower_house_norm.tsv', { delimiter: '\t' })
     .on('data', function (data) {
+      // delete null chars
+      for (var i = 0; i < data.length; i++) {
+        var fixprop = "";
+        for (var c = 0; c < data[i].length; c++) {
+          if (!data[i].charCodeAt(c) < 60000) {
+            fixprop += data[i][c];
+          }
+        }
+        data[i] = fixprop;
+      }
+
       // the constituency isn't repeated on every line, so I track it here
       if (data[1]) {
         activeConstituency = data[1];
@@ -750,7 +841,8 @@ function doLowerHouse() {
       function advance(reason) {
         // advance to the next candidate or finish
         if (reason) {
-          console.log(reason + JSON.stringify(candidates[c]));
+          console.log(reason);
+          //console.log(candidates[c]);
         }
         c++;
         if (!(c % 50)) {
@@ -776,6 +868,8 @@ function doLowerHouse() {
           throw err;
         }
 
+        candid_id = this.lastID;
+
         // try to find the rest of the details on this candidate
         processCandidate(candidate, advance, true);
       });
@@ -788,6 +882,17 @@ function doStatesRegions() {
   var candidates = [];
   csv.fromPath('./data/states_regions_norm.tsv', { delimiter: '\t' })
     .on('data', function (data) {
+      // delete null chars
+      for (var i = 0; i < data.length; i++) {
+        var fixprop = "";
+        for (var c = 0; c < data[i].length; c++) {
+          if (!data[i].charCodeAt(c) < 60000) {
+            fixprop += data[i][c];
+          }
+        }
+        data[i] = fixprop;
+      }
+
       if (data[1]) {
         activeConstituency = data[1];
       } else {
@@ -804,11 +909,8 @@ function doStatesRegions() {
     function addCandidate (c) {
       var candidate = candidates[c];
       candidate[0] = 'တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်';
-      var con_name = candidate[1].split(/\s/)[1] || '';
-      var con_number = '';
-      if (candidate[1].match(/\(/)) {
-        con_number = myanmarNumbers(candidate[1].split('(')[1].split(')')[0]);
-      }
+      var con_name = (candidate[1].split(/\s/)[0] || '').split('(')[0].replace(/\s/g, '').replace(/့်/g, '့်');
+      var con_number = (myanmarNumbers(candidate[1]) + "").match(/\d+/);
       var name = candidate[2].replace(/\s/g, '').replace(/့်/g, '့်');
       var party = candidate[3] || '';
 
@@ -818,8 +920,12 @@ function doStatesRegions() {
       }
       lastConstituency = con_name;
 
-      function advance() {
+      function advance(reason) {
         // advance
+        if (reason) {
+          console.log(reason);
+          //console.log(candidates[c]);
+        }
         c++;
         if (!(c % 50)) {
           console.log("-- " + c);
@@ -835,14 +941,15 @@ function doStatesRegions() {
       if (con_name.indexOf('ပြည်နယ်') > -1 || con_name.indexOf('ဒေသကြီး') > -1) {
 
         state = con_name;
-        return advance();
+        return advance('no name or con name');
       }
 
-      var cvalues = "'" + ['ပြည်သူ့လွှတ်တော်', con_name, 0, name, party.replace(/'/g, '"')].join("','") + "'";
+      var cvalues = "'" + ['တိုင်းဒေသကြီး/ပြည်နယ် လွှတ်တော်', con_name, con_number, name, party.replace(/'/g, '"')].join("','") + "'";
       db.run('INSERT INTO candidates (house, constituency, constituency_number, full_name, party) VALUES (' + cvalues + ')', function (err) {
         if (err) {
           throw err;
         }
+        candid_id = this.lastID;
 
         processCandidate(candidate, advance, 'state');
       });

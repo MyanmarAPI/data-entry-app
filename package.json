@@ -21,6 +21,7 @@
     "forever": "^0.14.2",
     "jade": "^1.10.0",
     "knayi-myscript": "^1.0.10",
+    "md5": "^2.0.0",
     "multer": "^0.1.8",
     "myanmar-numbers": "^1.0.2",
     "passport": "^0.2.2",

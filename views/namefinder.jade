@@ -12,16 +12,17 @@ html
           th Constituency
           th Constituency #
           th Party
-        tr
+        tr.candidate
+          td.candidate_id= person.id
           td.name= person.full_name
           td.house= person.house
           td.con_name= person.constituency
           td.con_number= person.constituency_number
           td.party= person.party
-      if matches.length === 0
-        .namesearch
-          input(type="text", value=fuzzname.replace(/%/g, ''))
-          button Search
+      .namesearch
+        input.name(type="text", value=fuzzname.replace(/%/g, ''))
+        input.con_name(type="text", value=constituency)
+        button Search
       h3 Names
       table#candidates
         for person in matches
@@ -29,7 +30,9 @@ html
             td.verify
               button Approve
             td.name= person.full_name
-            td.norm_id= person.norm_national_id
+            td.norm_id.natid= person.norm_national_id
+            td.norm_id.source= person.source
+            td.norm_id.id= person.id
             td.house= person.house
             td.con_name= person.constituency_name
             td.con_number= person.constituency_number
